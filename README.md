@@ -1,0 +1,2 @@
+# cryptobot
+Dev notes
