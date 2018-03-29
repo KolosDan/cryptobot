@@ -6,9 +6,10 @@
 
 import telebot
 import signal
-from backend import create_user, update
+from backend import create_user, _update
 from pymongo import MongoClient
 import sys
+from adminPanel import admin
 import time
 from telebot import types
 
@@ -18,7 +19,7 @@ from telebot import types
 
 token = "564747088:AAEAP-YnUgtqDfo--lGZNi89VOGR_cWfyYE"
 bot = telebot.TeleBot(token)
-# url = "https://api.telegram.org/bot%s/", token
+#url = "https://api.telegram.org/bot%s/"% token 
 db = MongoClient('213.183.48.143').cryptobot
 
 
@@ -47,6 +48,8 @@ def start(message):
 def cabinet(message):
     keybd = types.InlineKeyboardMarkup()
     data = db.user.find_one({"id":int(message.from_user.id)})
+#     if data['permissions']['is_admin'] == "true":
+#         admin()
     b = types.InlineKeyboardButton(text="💳 ETH кошелек", callback_data=str(message.chat.id) + "_eth")
     b1= types.InlineKeyboardButton(text="📨 EMAIL адрес", callback_data=str(message.chat.id) +"_email")
     b2= types.InlineKeyboardButton(text="📱 Номер телефона", callback_data=str(message.chat.id) +"_phone")
@@ -126,7 +129,30 @@ def btc(message):
 @bot.message_handler(func=lambda message: message.text=="📱 Изменить номер телефона")
 def chphone(message):
     bot.send_message(message.chat.id, "Введите номер в формате +79000000000")
-    #update(message.from_user.id,"phone",message.from_user)
+
+@bot.message_handler(commands=['phone'])
+def pizda(message):
+    print(message.text.split()[0])
+    
+@bot.message_handler(commands=['email'])
+def pizda(message):
+    print(message.text.split()[0])
+    
+@bot.message_handler(commands=['wallet'])
+def pizda(message):
+    print(message.text.split()[0])
+    
+# @bot.message_handler(regexp="\+")
+# def update(message):
+#     print(_update(message.from_user.id,"phone",message.text))
+    
+# @bot.message_handler(regexp="0x")
+# def update(message):
+#     print(_update(message.from_user.id,"eth_addr",message.text))
+    
+# @bot.message_handler(regexp="[^@]+@[^@]+\.[^@]+")
+# def update(message):
+#     print(_update(message.from_user.id,"eth_addr",message.text))
     
 @bot.message_handler(func=lambda message: message.text=="📨 Изменить Email")
 def chemail(message):
@@ -202,7 +228,7 @@ def callbacks(call):
     s = call.data.split("_")
     if s[1] == "eth":
         bot.send_message(s[0], "💳 Ваш текущий адрес:")
-        bot.send_message(s[0], "️❕ Вы всегда можете задать новый адрес: /change")
+        bot.send_message(s[0], "️❕ Вы всегда можете задать новый адрес командой: WIP")
         bot.send_message(s[0], "⚠️ Пожалуйста, НЕ вводите адрес биржевого ETH кошелька")
     elif s[1] == "history":
         bot.send_message(s[0], "💵 Баланс кошелька, привязанного в кабинете: …... Eth")
@@ -210,10 +236,10 @@ def callbacks(call):
         bot.send_message(s[0], "❕ У вас еще нет транзакций.")
     elif s[1] == "phone":
         bot.send_message(s[0], "📱 Ваш текущий номер:")
-        bot.send_message(s[0], "️❕ Вы всегда можете задать новый номер: /change")
-    elif s[1] == "phone":
-        bot.send_message(s[0], "📱 Ваш текущий номер:")
-        bot.send_message(s[0], "️❕ Вы всегда можете задать новый номер: /change")
+        bot.send_message(s[0], "️❕ Вы всегда можете задать новый номер командой: WIP")
+    elif s[1] == "email":
+        bot.send_message(s[0], "📨 Ваш текущий Email:")
+        bot.send_message(s[0], "️❕ Вы всегда можете задать новый Email командой: WIP")
     elif s[1] == "access":
         btn = types.InlineKeyboardButton(text="✅ Я оплатил", callback_data=s[0]+ "_paid")
         btn1 = types.InlineKeyboardButton(text="(если True)✅ Присоединиться", callback_data=s[0] + "_p")
