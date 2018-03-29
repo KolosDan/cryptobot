@@ -1,29 +1,33 @@
 
 # coding: utf-8
 
-# In[13]:
+# In[1]:
 
 
 import telebot
 import signal
+from backend import create_user, update
+from pymongo import MongoClient
 import sys
 import time
 from telebot import types
 
 
-# In[14]:
+# In[2]:
 
 
-token = ""
+token = "564747088:AAEAP-YnUgtqDfo--lGZNi89VOGR_cWfyYE"
 bot = telebot.TeleBot(token)
-url = "https://api.telegram.org/bot%s/", token
+# url = "https://api.telegram.org/bot%s/", token
+db = MongoClient('213.183.48.143').cryptobot
 
 
-# In[15]:
+# In[3]:
 
 
 @bot.message_handler(commands=['start'])
 def start(message):
+    create_user(message.from_user.id,message.from_user.username)
     keyboard = types.ReplyKeyboardMarkup()
     btn = types.InlineKeyboardButton(text="💼ICO клуб")
     btn1= types.InlineKeyboardButton(text="🔌Майнинг, оборудование")
@@ -42,18 +46,29 @@ def start(message):
 @bot.message_handler(func=lambda message: message.text=="👨🏻‍💻Личный кабинет")
 def cabinet(message):
     keybd = types.InlineKeyboardMarkup()
+    data = db.user.find_one({"id":int(message.from_user.id)})
     b = types.InlineKeyboardButton(text="💳 ETH кошелек", callback_data=str(message.chat.id) + "_eth")
     b1= types.InlineKeyboardButton(text="📨 EMAIL адрес", callback_data=str(message.chat.id) +"_email")
     b2= types.InlineKeyboardButton(text="📱 Номер телефона", callback_data=str(message.chat.id) +"_phone")
     b3= types.InlineKeyboardButton(text="🕓 История", callback_data=str(message.chat.id) +"_history")
     keybd.row(b,b1)
     keybd.row(b2,b3)
+    print(data)
     bot.send_message(message.chat.id, "👨🏻‍💻 Кабинет")
     bot.send_message(message.chat.id, "🔑 Вы не являетесь членом нашего закрытого сообщества Private Crypto.\nДля вас действует стандартная комиссия на ICO клуб.\nДля вас не действует скидка на оборудование для майнинга.\nДля вас не действует скидка на Приватный канал с торговыми рекомендациями.")
-    bot.send_message(message.chat.id, "🆔 Ваш id клиента:")
-    bot.send_message(message.chat.id, "💳 Адрес Вашего ETH кошелька:")
-    bot.send_message(message.chat.id, "📨 У Вас не задан e-mail:")
-    bot.send_message(message.chat.id, "📱 У Вас не задан номер телефона:",reply_markup=keybd)
+    bot.send_message(message.chat.id, "🆔 Ваш id клиента: %s" % data["id"])
+    if data['eth_addr'] == None:
+        bot.send_message(message.chat.id, "💳 У Вас нет ETH кошелька")
+    else:
+        bot.send_message(message.chat.id, "💳 Адрес Вашего ETH кошелька: %s" % data['eth_addr'])
+    if data['email'] == None:
+        bot.send_message(message.chat.id, "📨 У Вас не задан e-mail")
+    else:
+        bot.send_message(message.chat.id, "📨 Ваш e-mail: %s" % data['email'])
+    if data['phone'] == None:
+        bot.send_message(message.chat.id, "📱 У Вас не задан номер телефона",reply_markup=keybd)
+    else:
+        bot.send_message(message.chat.id, "📱 Ваш номер телефона: %s" % data['phone'],reply_markup=keybd)
 
 @bot.message_handler(func=lambda message: message.text=="🗣Приватный чат экспертов")
 def private(message):
@@ -105,8 +120,21 @@ def mining(message):
     bot.send_message(message.chat.id, "🔌Майнинг, оборудование")
 
 @bot.message_handler(func=lambda message: message.text=="🎁Розыгрыш BTC")
-def mainmenu(message):
+def btc(message):
     bot.send_message(message.chat.id, "🎁Розыгрыш BTC")
+    
+@bot.message_handler(func=lambda message: message.text=="📱 Изменить номер телефона")
+def chphone(message):
+    bot.send_message(message.chat.id, "Введите номер в формате +79000000000")
+    #update(message.from_user.id,"phone",message.from_user)
+    
+@bot.message_handler(func=lambda message: message.text=="📨 Изменить Email")
+def chemail(message):
+    bot.send_message(message.chat.id, "Введите Email")
+    
+@bot.message_handler(func=lambda message: message.text=="💳 Изменить ETH кошелек")
+def cheth(message):
+    bot.send_message(message.chat.id, "Введите ETH кошелек")
     
 @bot.message_handler(func=lambda message: message.text=="🤝 Принять участие")
 def takepart(message):
@@ -153,20 +181,16 @@ def btc(message):
 def DB(message):
     bot.send_message(message.chat.id, "📖База знаний")
     
-@bot.message_handler(func=lambda message: message.text=="📖База знаний")
-def DB(message):
-    bot.send_message(message.chat.id, "📖База знаний")
-    
 @bot.message_handler(func=lambda message: message.text=="💵Покупка BTC")
 def trade_btc(message):
     bot.send_message(message.chat.id, "Описание: объемы от 1 BTC до 1000 BTC при личной встрече за наличный расчет\nДо 1 BTC можете купить в боте: ссылка с рефкой")
     
 @bot.message_handler(commands=['change'])
 def change(message):
-    keyboard = types.InlineKeyboardMarkup()
-    btn = types.InlineKeyboardButton(text="📱 Изменить номер телефона", callback_data=str(message.chat.id) + "_d")
-    btn1= types.InlineKeyboardButton(text="📨 Изменить Email", callback_data=str(message.chat.id) +"_date")
-    btn2= types.InlineKeyboardButton(text="💳 Изменить ETH кошелек", callback_data=str(message.chat.id) +"_date")
+    keyboard = types.ReplyKeyboardMarkup()
+    btn = types.InlineKeyboardButton(text="📱 Изменить номер телефона", callback_data=str(message.chat.id) + "_chphone")
+    btn1= types.InlineKeyboardButton(text="📨 Изменить Email", callback_data=str(message.chat.id) +"_chemail")
+    btn2= types.InlineKeyboardButton(text="💳 Изменить ETH кошелек", callback_data=str(message.chat.id) +"_chwallet")
     keyboard.add(btn)
     keyboard.add(btn1)
     keyboard.add(btn2)
@@ -184,9 +208,9 @@ def callbacks(call):
         bot.send_message(s[0], "💵 Баланс кошелька, привязанного в кабинете: …... Eth")
         bot.send_message(s[0], "️📗 Список ваших последних транзакций:")
         bot.send_message(s[0], "❕ У вас еще нет транзакций.")
-    elif s[1] == "email":
-        bot.send_message(s[0], "📨 Ваш текущий Email:")
-        bot.send_message(s[0], "️❕ Вы всегда можете задать новый Email: /change")
+    elif s[1] == "phone":
+        bot.send_message(s[0], "📱 Ваш текущий номер:")
+        bot.send_message(s[0], "️❕ Вы всегда можете задать новый номер: /change")
     elif s[1] == "phone":
         bot.send_message(s[0], "📱 Ваш текущий номер:")
         bot.send_message(s[0], "️❕ Вы всегда можете задать новый номер: /change")
@@ -198,7 +222,7 @@ def callbacks(call):
         bot.send_message(s[0], '''⚠️ Сумма должна быть точно равной указанным!\nИначе доступ не откроется в автоматическом режиме.''',reply_markup=keyboard)
 
 
-# In[16]:
+# In[4]:
 
 
 def main():
@@ -217,10 +241,4 @@ def signal_handler(signal_number, frame):
 
 if __name__ == "__main__":
     main()
-
-
-# In[ ]:
-
-
-368898013
 
