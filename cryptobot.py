@@ -23,7 +23,7 @@ bot = telebot.TeleBot(token)
 db = MongoClient('213.183.48.143').cryptobot
 
 
-# In[3]:
+# In[ ]:
 
 
 @bot.message_handler(commands=['start'])
@@ -56,7 +56,6 @@ def cabinet(message):
     b3= types.InlineKeyboardButton(text="🕓 История", callback_data=str(message.chat.id) +"_history")
     keybd.row(b,b1)
     keybd.row(b2,b3)
-    print(data)
     bot.send_message(message.chat.id, "👨🏻‍💻 Кабинет")
     bot.send_message(message.chat.id, "🔑 Вы не являетесь членом нашего закрытого сообщества Private Crypto.\nДля вас действует стандартная комиссия на ICO клуб.\nДля вас не действует скидка на оборудование для майнинга.\nДля вас не действует скидка на Приватный канал с торговыми рекомендациями.")
     bot.send_message(message.chat.id, "🆔 Ваш id клиента: %s" % data["id"])
@@ -127,40 +126,28 @@ def btc(message):
     bot.send_message(message.chat.id, "🎁Розыгрыш BTC")
     
 @bot.message_handler(func=lambda message: message.text=="📱 Изменить номер телефона")
-def chphone(message):
+def phone(message):
     bot.send_message(message.chat.id, "Введите номер в формате +79000000000")
+    bot.register_next_step_handler(message,phone_change)
 
-@bot.message_handler(commands=['phone'])
-def pizda(message):
-    print(message.text.split()[0])
-    
-@bot.message_handler(commands=['email'])
-def pizda(message):
-    print(message.text.split()[0])
-    
-@bot.message_handler(commands=['wallet'])
-def pizda(message):
-    print(message.text.split()[0])
-    
-# @bot.message_handler(regexp="\+")
-# def update(message):
-#     print(_update(message.from_user.id,"phone",message.text))
-    
-# @bot.message_handler(regexp="0x")
-# def update(message):
-#     print(_update(message.from_user.id,"eth_addr",message.text))
-    
-# @bot.message_handler(regexp="[^@]+@[^@]+\.[^@]+")
-# def update(message):
-#     print(_update(message.from_user.id,"eth_addr",message.text))
-    
+def phone_change(message):
+    _update(message.from_user.id,"phone",message.text)
+        
 @bot.message_handler(func=lambda message: message.text=="📨 Изменить Email")
-def chemail(message):
+def email(message):
     bot.send_message(message.chat.id, "Введите Email")
+    bot.register_next_step_handler(message,email_change)
+
+def email_change(message):
+    _update(message.from_user.id,"email",message.text)
     
 @bot.message_handler(func=lambda message: message.text=="💳 Изменить ETH кошелек")
-def cheth(message):
+def eth(message):
     bot.send_message(message.chat.id, "Введите ETH кошелек")
+    bot.register_next_step_handler(message,wallet_change)
+    
+def wallet_change(message):
+    _update(message.from_user.id,"eth_addr",message.text)
     
 @bot.message_handler(func=lambda message: message.text=="🤝 Принять участие")
 def takepart(message):
@@ -214,32 +201,42 @@ def trade_btc(message):
 @bot.message_handler(commands=['change'])
 def change(message):
     keyboard = types.ReplyKeyboardMarkup()
-    btn = types.InlineKeyboardButton(text="📱 Изменить номер телефона", callback_data=str(message.chat.id) + "_chphone")
-    btn1= types.InlineKeyboardButton(text="📨 Изменить Email", callback_data=str(message.chat.id) +"_chemail")
-    btn2= types.InlineKeyboardButton(text="💳 Изменить ETH кошелек", callback_data=str(message.chat.id) +"_chwallet")
-    keyboard.add(btn)
-    keyboard.add(btn1)
-    keyboard.add(btn2)
+    btn = types.InlineKeyboardButton(text="📱 Изменить номер телефона")
+    btn1= types.InlineKeyboardButton(text="📨 Изменить Email")
+    btn2= types.InlineKeyboardButton(text="💳 Изменить ETH кошелек")
+    btn3= types.InlineKeyboardButton(text="🔙 Главное меню")
+    keyboard.row(btn,btn1)
+    keyboard.row(btn2,btn3)
     bot.send_message(message.chat.id, "Хочешь изменить данные? Выбирай, что именно:",reply_markup=keyboard)
     
 @bot.callback_query_handler(func=lambda call: True)
 def callbacks(call):
     keyboard = types.InlineKeyboardMarkup()
+    data = db.user.find_one({"id":int(call.from_user.id)})
     s = call.data.split("_")
     if s[1] == "eth":
-        bot.send_message(s[0], "💳 Ваш текущий адрес:")
-        bot.send_message(s[0], "️❕ Вы всегда можете задать новый адрес командой: WIP")
+        if data['eth_addr'] == None:
+            bot.send_message(s[0], "💳 У Вас не задан ETH адрес:")
+        else:
+            bot.send_message(s[0], "💳 Ваш текущий адрес: %s" % data['eth_addr'])
+        bot.send_message(s[0], "️❕ Вы всегда можете задать новый адрес командой: /change")
         bot.send_message(s[0], "⚠️ Пожалуйста, НЕ вводите адрес биржевого ETH кошелька")
     elif s[1] == "history":
         bot.send_message(s[0], "💵 Баланс кошелька, привязанного в кабинете: …... Eth")
         bot.send_message(s[0], "️📗 Список ваших последних транзакций:")
         bot.send_message(s[0], "❕ У вас еще нет транзакций.")
     elif s[1] == "phone":
-        bot.send_message(s[0], "📱 Ваш текущий номер:")
-        bot.send_message(s[0], "️❕ Вы всегда можете задать новый номер командой: WIP")
+        if data['phone'] == None:
+            bot.send_message(s[0], "📱 У Вас не задан номер")
+        else:
+            bot.send_message(s[0], "📱 Ваш текущий номер: %s" % data['phone'])
+        bot.send_message(s[0], "️❕ Вы всегда можете задать новый номер командой: /change")
     elif s[1] == "email":
-        bot.send_message(s[0], "📨 Ваш текущий Email:")
-        bot.send_message(s[0], "️❕ Вы всегда можете задать новый Email командой: WIP")
+        if data['email'] == None:
+            bot.send_message(s[0], "📨 У Вас не задан Email")
+        else:
+            bot.send_message(s[0], "📨 Ваш текущий Email: %s" % data['email'])
+        bot.send_message(s[0], "️❕ Вы всегда можете задать новый Email командой: /change")
     elif s[1] == "access":
         btn = types.InlineKeyboardButton(text="✅ Я оплатил", callback_data=s[0]+ "_paid")
         btn1 = types.InlineKeyboardButton(text="(если True)✅ Присоединиться", callback_data=s[0] + "_p")
@@ -248,7 +245,7 @@ def callbacks(call):
         bot.send_message(s[0], '''⚠️ Сумма должна быть точно равной указанным!\nИначе доступ не откроется в автоматическом режиме.''',reply_markup=keyboard)
 
 
-# In[4]:
+# In[ ]:
 
 
 def main():

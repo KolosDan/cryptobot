@@ -1,20 +1,17 @@
 # coding: utf-8
-
-# In[65]:
-
-
 from pymongo import MongoClient
 import requests
 import datetime
+from web3.utils import validation
+import re
+from phonenumbers import parse, is_possible_number
+from web3 import Web3, HTTPProvider
 
 
-# In[ ]:
 
 
 db = MongoClient('213.183.48.143').cryptobot
-
-
-# In[80]:
+w3 = Web3(HTTPProvider('https://ropsten.infura.io/xSb0KCuTom59NVjS446D'))
 
 
 def create_user(_id, username):
@@ -46,3 +43,24 @@ def update(_id,field, upd):
                 return False
         except:
             return False
+
+def create_ico(name, description):
+    if name not in [item['ico'] for item in db.ico.find()]:
+        return db.ico.insert_one({'ico' :name, 
+                      'address' : requests.post('https://api.blockcypher.com/v1/eth/main/addrs').json(),
+                      'description' : description,
+                      'contributors' : [],
+                             'locked':True})
+    else:
+        return False
+    
+def change_ico_lock(name):
+    if db.ico.find_one({'ico': name})['locked'] == False:
+        print('ICO locked')
+        return db.ico.update_one({'ico': name}, {'$set':{'locked': True}})
+    else:
+        print('ICO unlocked')
+        return db.ico.update_one({'ico': name}, {'$set':{'locked': False}})
+
+def get_balance(_id):
+    return w3.eth.getBalance('0x' + db.user.find_one({'id':_id})['deposit_addr']['address'])/1000000000000000000
