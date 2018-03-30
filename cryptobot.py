@@ -6,7 +6,7 @@
 
 import telebot
 import signal
-from backend import create_user, _update
+from backend import create_user,_update,create_ico,get_balance,change_lock,get_deposit_addr
 from pymongo import MongoClient
 import sys
 from adminPanel import admin
@@ -23,7 +23,7 @@ bot = telebot.TeleBot(token)
 db = MongoClient('213.183.48.143').cryptobot
 
 
-# In[ ]:
+# In[3]:
 
 
 @bot.message_handler(commands=['start'])
@@ -48,14 +48,17 @@ def start(message):
 def cabinet(message):
     keybd = types.InlineKeyboardMarkup()
     data = db.user.find_one({"id":int(message.from_user.id)})
-#     if data['permissions']['is_admin'] == "true":
-#         admin()
+    if data['permissions']['is_admin'] == "true":
+        admin_button = types.InlineKeyboardButton(text="Админка", callback_data=str(message.chat.id) + "_admin")
+        keybd.row(admin_button)
     b = types.InlineKeyboardButton(text="💳 ETH кошелек", callback_data=str(message.chat.id) + "_eth")
     b1= types.InlineKeyboardButton(text="📨 EMAIL адрес", callback_data=str(message.chat.id) +"_email")
     b2= types.InlineKeyboardButton(text="📱 Номер телефона", callback_data=str(message.chat.id) +"_phone")
     b3= types.InlineKeyboardButton(text="🕓 История", callback_data=str(message.chat.id) +"_history")
+    b4 = types.InlineKeyboardButton(text="💰 Пополнить баланс", callback_data=str(message.chat.id) + "_deposit")
     keybd.row(b,b1)
     keybd.row(b2,b3)
+    keybd.row(b4)
     bot.send_message(message.chat.id, "👨🏻‍💻 Кабинет")
     bot.send_message(message.chat.id, "🔑 Вы не являетесь членом нашего закрытого сообщества Private Crypto.\nДля вас действует стандартная комиссия на ICO клуб.\nДля вас не действует скидка на оборудование для майнинга.\nДля вас не действует скидка на Приватный канал с торговыми рекомендациями.")
     bot.send_message(message.chat.id, "🆔 Ваш id клиента: %s" % data["id"])
@@ -131,7 +134,8 @@ def phone(message):
     bot.register_next_step_handler(message,phone_change)
 
 def phone_change(message):
-    _update(message.from_user.id,"phone",message.text)
+    if _update(message.from_user.id,"phone",message.text) != False:
+        bot.send_message(message.chat.id, "Телефон успешно обновлен!")
         
 @bot.message_handler(func=lambda message: message.text=="📨 Изменить Email")
 def email(message):
@@ -152,8 +156,8 @@ def wallet_change(message):
 @bot.message_handler(func=lambda message: message.text=="🤝 Принять участие")
 def takepart(message):
     keyboard = types.InlineKeyboardMarkup()
-    btn = types.InlineKeyboardButton(text="Модель 🅰️", callback_data=str(message.chat.id) + "_d")
-    btn1= types.InlineKeyboardButton(text="Модель 🅱️", callback_data=str(message.chat.id) +"_date")
+    btn = types.InlineKeyboardButton(text="Модель 🅰️", callback_data=str(message.chat.id) + "_modelA")
+    btn1= types.InlineKeyboardButton(text="Модель 🅱️", callback_data=str(message.chat.id) +"_modelB")
     keyboard.row(btn,btn1)
     bot.send_message(message.chat.id, "У нас есть 2 формата участия в нашем ICO клубе:")
     bot.send_message(message.chat.id, "Модель 🅰️ – участие в пуле на конкретное заявленное ICO.\nВыбор проекта осуществляется всеми участниками из предложенных и отобранных нашей командой аналитиков.\nКомиссия клуба: 5-15%")
@@ -190,6 +194,17 @@ def trade(message):
 def btc(message):
     bot.send_message(message.chat.id, "🎁Розыгрыш BTC")
     
+@bot.message_handler(func=lambda message: message.text=="Добавить ICO")
+def createico(message):
+    data = db.user.find_one({"id":int(message.from_user.id)})
+    if data['permissions']['is_admin'] == "true":
+        bot.send_message(message.chat.id, "Введите имя ICO и описание в формате: ИМЯ ICO : ОПИСАНИЕ")
+        bot.register_next_step_handler(message,ico_name)
+        
+def ico_name(message):
+    s = message.text.split(':')
+    create_ico(s[0],s[1])
+    
 @bot.message_handler(func=lambda message: message.text=="📖База знаний")
 def DB(message):
     bot.send_message(message.chat.id, "📖База знаний")
@@ -219,10 +234,21 @@ def callbacks(call):
             bot.send_message(s[0], "💳 У Вас не задан ETH адрес:")
         else:
             bot.send_message(s[0], "💳 Ваш текущий адрес: %s" % data['eth_addr'])
+        bot.send_message(s[0], "💵 Баланс кошелька, привязанного в кабинете: %s Eth" % get_balance(call.from_user.id))
         bot.send_message(s[0], "️❕ Вы всегда можете задать новый адрес командой: /change")
         bot.send_message(s[0], "⚠️ Пожалуйста, НЕ вводите адрес биржевого ETH кошелька")
+    elif s[1] == "admin":
+        bot.send_message(s[0], "че пацан админ??",reply_markup=admin(call.from_user.id))
+    elif s[1] == "modelA":
+        cnt = 0
+        ico = db.ico.find()
+        for i in ico:
+            keyboard.add(types.InlineKeyboardButton(text="✅ "+i['ico'],callback_data="1"))
+        bot.send_message(s[0], "Просмотр пректов",reply_markup=keyboard)
+    elif s[1] == "deposit":
+        bot.send_message(s[0], "Здесь Вы можете пополнить баланс Вашего кошелька")
+        bot.send_message(s[0], "Для этого перешлите ETH на Ваш личный кошелек: %s" % get_deposit_addr(call.from_user.id))
     elif s[1] == "history":
-        bot.send_message(s[0], "💵 Баланс кошелька, привязанного в кабинете: …... Eth")
         bot.send_message(s[0], "️📗 Список ваших последних транзакций:")
         bot.send_message(s[0], "❕ У вас еще нет транзакций.")
     elif s[1] == "phone":
@@ -245,7 +271,7 @@ def callbacks(call):
         bot.send_message(s[0], '''⚠️ Сумма должна быть точно равной указанным!\nИначе доступ не откроется в автоматическом режиме.''',reply_markup=keyboard)
 
 
-# In[ ]:
+# In[4]:
 
 
 def main():

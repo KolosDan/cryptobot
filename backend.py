@@ -41,7 +41,7 @@ def create_user(_id, username):
 
 
 
-def update(_id,field, upd):
+def _update(_id,field, upd):
     if field == 'eth_addr':
         if validation.is_0x_prefixed(upd) and validation.is_address(upd) and len(upd) == 42:
             return db.user.update({'id':_id},{'$set':{'eth_addr': upd}})
@@ -108,11 +108,8 @@ def tx(from_addr, to_addr, signature, eth_value):
 
 def contribute(_id, ico, eth_value):
     to_addr = '0x' + db.ico.find_one({'ico':ico})['address']['address']
-    print(to_addr)
     signature = '0x' + db.user.find_one({'id':_id})['deposit_addr']['private']
-    print(signature)
     from_addr = '0x' + db.user.find_one({'id':_id})['deposit_addr']['address']
-    print(from_addr)
     return tx(from_addr, to_addr, signature, eth_value)
 
 
