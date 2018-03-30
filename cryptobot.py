@@ -136,6 +136,8 @@ def phone(message):
 def phone_change(message):
     if _update(message.from_user.id,"phone",message.text) != False:
         bot.send_message(message.chat.id, "Телефон успешно обновлен!")
+    else:
+        bot.send_message(message.chat.id, "Что-то пошло не так:(\nПроверьте правильность введенных данных")
         
 @bot.message_handler(func=lambda message: message.text=="📨 Изменить Email")
 def email(message):
@@ -143,7 +145,10 @@ def email(message):
     bot.register_next_step_handler(message,email_change)
 
 def email_change(message):
-    _update(message.from_user.id,"email",message.text)
+    if _update(message.from_user.id,"email",message.text) != False:
+        bot.send_message(message.chat.id, "Email успешно обновлен!")
+    else:
+        bot.send_message(message.chat.id, "Что-то пошло не так:(\nПроверьте правильность введенных данных")
     
 @bot.message_handler(func=lambda message: message.text=="💳 Изменить ETH кошелек")
 def eth(message):
@@ -151,7 +156,10 @@ def eth(message):
     bot.register_next_step_handler(message,wallet_change)
     
 def wallet_change(message):
-    _update(message.from_user.id,"eth_addr",message.text)
+    if _update(message.from_user.id,"eth_addr",message.text) != False:
+        bot.send_message(message.chat.id, "Кошелек успешно обновлен!")
+    else:
+        bot.send_message(message.chat.id, "Что-то пошло не так:(\nПроверьте правильность введенных данных")
     
 @bot.message_handler(func=lambda message: message.text=="🤝 Принять участие")
 def takepart(message):
@@ -202,8 +210,10 @@ def createico(message):
         bot.register_next_step_handler(message,ico_name)
         
 def ico_name(message):
-    s = message.text.split(':')
-    create_ico(s[0],s[1])
+    data = db.user.find_one({"id":int(message.from_user.id)})
+    if data['permissions']['is_admin'] == "true":
+        s = message.text.split(':')
+        create_ico(s[0],s[1])
     
 @bot.message_handler(func=lambda message: message.text=="📖База знаний")
 def DB(message):
@@ -245,6 +255,11 @@ def callbacks(call):
         for i in ico:
             keyboard.add(types.InlineKeyboardButton(text="✅ "+i['ico'],callback_data="1"))
         bot.send_message(s[0], "Просмотр пректов",reply_markup=keyboard)
+    elif s[1] == "modelB":
+        btn = types.InlineKeyboardButton(text="✅ Я оплатил", callback_data=s[0]+ "_paid")
+        keyboard.add(btn)
+        bot.send_message(s[0], '💳 Для участия пришлите ETH на этот кошелек, дождитесь статуса ✅ Success и нажмите "Я оплатил" 👇\nЕсли транзакция не будет подтверждена с первого раза, пожалуйста, попробуйте еще раз через 10 минут.',reply_markup=keyboard)
+        
     elif s[1] == "deposit":
         bot.send_message(s[0], "Здесь Вы можете пополнить баланс Вашего кошелька")
         bot.send_message(s[0], "Для этого перешлите ETH на Ваш личный кошелек: %s" % get_deposit_addr(call.from_user.id))
