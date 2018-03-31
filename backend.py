@@ -13,7 +13,6 @@ from phonenumbers import parse, is_valid_number
 from web3 import Web3, HTTPProvider
 import time
 
-
 # In[2]:
 
 
@@ -30,33 +29,37 @@ w3 = Web3(HTTPProvider('https://ropsten.infura.io/xSb0KCuTom59NVjS446D'))
 
 # In[4]:
 
-
 def create_user(_id, username):
-    user = {}
-    user['id'] = _id
-    user['username'] = username
-    user['eth_addr'] = None
-    user['email'] = None
-    user['phone'] = None
-    user['permissions'] = {'is_expert': False, 'is_admin': False}
-    user['balance'] = 0.0
-    user['operations'] = ['Created user ' + str(datetime.datetime.now())]
-    user['deposit_addr'] = requests.post('https://api.blockcypher.com/v1/eth/main/addrs').json()
-    
-    return db.user.insert_one(user)
+    if db.user.find_one({"username":username}) == None:
+        user = {}
+        user['id'] = _id
+        user['username'] = username
+        user['eth_addr'] = None
+        user['email'] = None
+        user['phone'] = None
+        user['is_expert'] = False
+        user['is_admin'] = False
+        user['balance'] = 0.0
+        user['operations'] = ['Created user ' + str(datetime.datetime.now())]
+        user['deposit_addr'] = requests.post('https://api.blockcypher.com/v1/eth/main/addrs').json()
 
+        return db.user.insert_one(user)
 
 # In[5]:
 
 
-def update(_id,field, upd):
+def _update(_id,field, upd):
     if field == 'eth_addr':
         if validation.is_0x_prefixed(upd) and validation.is_address(upd) and len(upd) == 42:
             return db.user.update({'id':_id},{'$set':{'eth_addr': upd}})
-    if field == 'email':
+        else:
+            return False
+    elif field == 'email':
         if re.match(r"[^@]+@[^@]+\.[^@]+", upd):
             return db.user.update({'id':_id},{'$set':{'email': upd}})
-    if field == 'phone':
+        else:
+            return False
+    elif field == 'phone':
         try:
             if is_valid_number(parse(upd)):
                 return db.user.update({'id':_id},{'$set':{'phone': upd}})
@@ -88,7 +91,6 @@ def change_lock(name):
         print('ICO locked')
         return db.ico.update_one({'ico': name}, {'$set':{'locked': True}})
     else:
-        print('ICO unlocked')
         return db.ico.update_one({'ico': name}, {'$set':{'locked': False}})
 
 
@@ -119,9 +121,6 @@ def tx(from_addr, to_addr, signature, eth_value):
     return w3.eth.sendRawTransaction(raw_tx_hex)
 
 
-# In[86]:
-
-
 def contribute(_id, ico, eth_value):
     if get_balance(_id) >= eth_value:
         to_addr = '0x' + db.ico.find_one({'ico':ico})['address']['address']
@@ -146,14 +145,23 @@ def get_deposit_addr(_id):
 
 
 def add_expert(addr):
-    return db.expert.insert_one({'name':'expert_wallet', 'addr': addr})
+    if db.expert.find_one({'name': 'expert_wallet'}) == None:
+        if validation.is_0x_prefixed(addr) and validation.is_address(addr) and len(addr) == 42:
+            return db.expert.insert_one({'name':'expert_wallet', 'addr': addr})
+        else:
+            return False
+    else:
+        return False
 
 
 # In[89]:
 
 
 def update_expert(addr):
-    return db.expert.update_one({'name': 'expert_wallet'}, {'$set':{'addr': addr}})
+    if validation.is_0x_prefixed(addr) and validation.is_address(addr) and len(addr) == 42:
+        return db.expert.update_one({'name': 'expert_wallet'}, {'$set':{'addr': addr}})
+    else:
+        return False
 
 
 # In[90]:
@@ -179,7 +187,7 @@ def get_expert(_id, length):
         time = 'forever'
         
     if get_balance(_id) >= eth_value:
-        db.user.update_one({'id':_id}, {'$set':{'permissions':{'is_expert': time}}})
+        db.user.update_one({'id':_id}, {'$set':{'is_expert': time}})
         return tx(from_addr, to_addr, signature, eth_value)
     else:
         return False
@@ -189,7 +197,7 @@ def get_expert(_id, length):
 
 
 def get_ico_money(ico):
-    return w3.eth.getBalance('0x' + db.ico.find_one({'ico':ico})['address']['address'])/1000000000000000000
+    return w3.eth.getBalance('0x' + db.ico.find_one({'ico':ico})['address']['address'])/10000000000000000000
 
 
 # In[110]:
