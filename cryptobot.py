@@ -13,17 +13,17 @@ import time
 from adminPanel import admin,Payment,ICO
 import time
 from telebot import types
-"""ПРОВЕРЬ КЛАСС"""
 
 
 # In[2]:
 
 
-token = ""
+token = "564747088:AAEAP-YnUgtqDfo--lGZNi89VOGR_cWfyYE"
 bot = telebot.TeleBot(token)
-db = MongoClient('').cryptobot
+db = MongoClient('213.183.48.143').cryptobot
 payment = Payment()
 ico = ICO()
+user_dict = {}
 
 
 # In[3]:
@@ -33,8 +33,8 @@ ico = ICO()
 def start(message):
     create_user(message.from_user.id,message.from_user.username)
     keyboard = types.ReplyKeyboardMarkup()
-    btn = types.InlineKeyboardButton(text="💼ICO клуб")
-    btn1= types.InlineKeyboardButton(text="🔌Майнинг, оборудование")
+    btn= types.InlineKeyboardButton(text="👨🏻‍💻Личный кабинет")
+    btn1 = types.InlineKeyboardButton(text="💼ICO клуб")
     keyboard.row(btn,btn1)
     btn2= types.InlineKeyboardButton(text="📈Торговые рекомендации")
     btn3= types.InlineKeyboardButton(text="🗣Приватный чат экспертов")
@@ -42,15 +42,15 @@ def start(message):
     btn4= types.InlineKeyboardButton(text="🎁Розыгрыш BTC")
     btn5= types.InlineKeyboardButton(text="📖База знаний")
     keyboard.row(btn4,btn5)
-    btn6= types.InlineKeyboardButton(text="👨🏻‍💻Личный кабинет")
-    btn7= types.InlineKeyboardButton(text="💵Покупка BTC")
+    btn6= types.InlineKeyboardButton(text="💵Покупка BTC")
+    btn7= types.InlineKeyboardButton(text="🔌Майнинг, оборудование")
     keyboard.row(btn6,btn7)
     bot.send_message(message.chat.id, "👋 Приветствуем, %s! В главном меню Вы можете выбрать то, что Вас интересует:" % message.from_user.first_name,reply_markup=keyboard)
 
 @bot.message_handler(func=lambda message: message.text=="Добавить ICO")
 def createico(message):
     data = db.user.find_one({"id":int(message.from_user.id)})
-    if data['permissions']['is_admin'] == "true":
+    if data['is_admin'] == True:
         bot.send_message(message.chat.id, "Введите имя ICO")
         bot.register_next_step_handler(message,ico_name)
         
@@ -100,7 +100,7 @@ def addexpert_2(message):
 def cabinet(message):
     keybd = types.InlineKeyboardMarkup()
     data = db.user.find_one({"id":int(message.from_user.id)})
-    if data['is_admin'] == "true":
+    if data['is_admin'] == True:
         admin_button = types.InlineKeyboardButton(text="Админка", callback_data=str(message.chat.id) + "_admin")
         keybd.row(admin_button)
     b = types.InlineKeyboardButton(text="💳 ETH кошелек", callback_data=str(message.chat.id) + "_eth")
@@ -114,6 +114,7 @@ def cabinet(message):
     bot.send_message(message.chat.id, "👨🏻‍💻 Кабинет")
     bot.send_message(message.chat.id, "🔑 Вы не являетесь членом нашего закрытого сообщества Private Crypto.\nДля вас действует стандартная комиссия на ICO клуб.\nДля вас не действует скидка на оборудование для майнинга.\nДля вас не действует скидка на Приватный канал с торговыми рекомендациями.")
     bot.send_message(message.chat.id, "🆔 Ваш id клиента: %s" % data["id"])
+    bot.send_message(message.chat.id, "💵 Баланс кошелька, привязанного в кабинете: %s Eth" % get_balance(message.from_user.id))
     if data['eth_addr'] == None:
         bot.send_message(message.chat.id, "💳 У Вас нет ETH кошелька")
     else:
@@ -157,8 +158,8 @@ def ICO(message):
 @bot.message_handler(func=lambda message: message.text=="🔙 Главное меню")
 def startmenu(message):
     keyboard = types.ReplyKeyboardMarkup()
-    btn = types.InlineKeyboardButton(text="💼ICO клуб")
-    btn1= types.InlineKeyboardButton(text="🔌Майнинг, оборудование")
+    btn= types.InlineKeyboardButton(text="👨🏻‍💻Личный кабинет")
+    btn1 = types.InlineKeyboardButton(text="💼ICO клуб")
     keyboard.row(btn,btn1)
     btn2= types.InlineKeyboardButton(text="📈Торговые рекомендации")
     btn3= types.InlineKeyboardButton(text="🗣Приватный чат экспертов")
@@ -166,8 +167,8 @@ def startmenu(message):
     btn4= types.InlineKeyboardButton(text="🎁Розыгрыш BTC")
     btn5= types.InlineKeyboardButton(text="📖База знаний")
     keyboard.row(btn4,btn5)
-    btn6= types.InlineKeyboardButton(text="👨🏻‍💻Личный кабинет")
-    btn7= types.InlineKeyboardButton(text="💵Покупка BTC")
+    btn6= types.InlineKeyboardButton(text="💵Покупка BTC")
+    btn7= types.InlineKeyboardButton(text="🔌Майнинг, оборудование")
     keyboard.row(btn6,btn7)
     bot.send_message(message.chat.id, "Главное меню",reply_markup=keyboard)
     
@@ -220,9 +221,7 @@ def takepart(message):
     keyboard.row(btn,btn1)
     bot.send_message(message.chat.id, "У нас есть 2 формата участия в нашем ICO клубе:")
     bot.send_message(message.chat.id, "Модель 🅰️ – участие в пуле на конкретное заявленное ICO.\nВыбор проекта осуществляется всеми участниками из предложенных и отобранных нашей командой аналитиков.\nКомиссия клуба: 5-15%")
-    bot.send_message(message.chat.id, "Комиссия клуба: 5-15%")
     bot.send_message(message.chat.id, "Модель 🅱️ – участие в 5 проектах на усмотрение клуба.\nУчастника не нужно заморачиваться и тратить свое время на выбор проектов, регистрации и прочее.\nНаша команда сделает это за вас. Проекты будут отобраны в течении 1-2 месяцев.\nКомиссия клуба: 12%")
-    bot.send_message(message.chat.id, "Комиссия клуба: 12%")
     bot.send_message(message.chat.id, "🎁 Всем участникам ICO клуба дается доступ на 1 месяц к Приватному чату экспертов Private Crypto в подарок.")
     bot.send_message(message.chat.id, "Выбери свою модель участия:", reply_markup=keyboard)
     
@@ -273,8 +272,10 @@ def change(message):
     bot.send_message(message.chat.id, "Хотите изменить данные? Выбирайте, что именно:",reply_markup=keyboard)
 
 def syka(call,_id,name):
-    payment._id = _id
-    payment.name = name
+    user = Payment()
+    user_dict[_id] = user
+    user_dict[_id]._id = _id
+    user_dict[_id].name = name
     bot.send_message(_id,'Отличный выбор!')
     bot.send_message(_id,'Введите количество ETH, которое хотите вложить:')
     bot.register_next_step_callback(call,pizdec)
@@ -282,16 +283,19 @@ def syka(call,_id,name):
 def pizdec(message):
     try:
         var = float(message.text)
-        payment.value = var
+        user_dict[str(message.chat.id)].value = var
         keyboard = types.InlineKeyboardMarkup()
         btn = types.InlineKeyboardButton(text="✅ Подтвердить", callback_data=str(message.chat.id)+ "_icoinvest")
-        btn1 = types.InlineKeyboardButton(text="🚫 Отмена", callback_data="_data")
         keyboard.row(btn)
-        keyboard.row(btn1)
-        bot.send_message(message.chat.id,'Вы хотите перевести ' + str(payment.value) + ' ETH на счет ' + payment.name,reply_markup=keyboard) 
+        bot.send_message(message.chat.id,'Вы хотите перевести ' + str(user_dict[str(message.chat.id)].value) + ' ETH на счет ' + str(user_dict[str(message.chat.id)].name),reply_markup=keyboard) 
     except ValueError:
         bot.send_message(message.chat.id,'Необходимо ввести число, попробуйте еще раз')
         bot.register_next_step_handler(message,pizdec)
+        
+# def modelB(message):
+def question(message):
+    print(message.text)
+    bot.send_message(message.chat.id, "️Ваш вопрос напрален администратору\nС вами свяжутся в ближайшее время")
         
 @bot.callback_query_handler(func=lambda call: True)
 def callbacks(call):
@@ -303,21 +307,19 @@ def callbacks(call):
             bot.send_message(s[0], "💳 У Вас не задан ETH адрес:")
         else:
             bot.send_message(s[0], "💳 Ваш текущий адрес: %s" % data['eth_addr'])
-        bot.send_message(s[0], "💵 Баланс кошелька, привязанного в кабинете: %s Eth" % get_balance(call.from_user.id))
         bot.send_message(s[0], "️❕ Вы всегда можете задать новый адрес командой: /change")
         bot.send_message(s[0], "⚠️ Пожалуйста, НЕ вводите адрес биржевого ETH кошелька")
     elif s[1] == "admin":
         bot.send_message(s[0], "че пацан админ??",reply_markup=admin(call.from_user.id))
     elif s[1] == "modelA":
         cnt = 0
-        icos = icos = db.ico.find({'locked':False})
+        icos = db.ico.find({'locked':False})
         for i in icos:
             keyboard.add(types.InlineKeyboardButton(text="✅ "+i['ico'],callback_data=s[0]+"_"+i['ico']+"_invest"))
         bot.send_message(s[0], "Просмотр проектов",reply_markup=keyboard)
     elif s[1] == "modelB":
-        btn = types.InlineKeyboardButton(text="✅ Я оплатил", callback_data=s[0]+ "_paid")
-        keyboard.add(btn)
-        bot.send_message(s[0], '💳 Для участия пришлите ETH на этот кошелек, дождитесь статуса ✅ Success и нажмите "Я оплатил" 👇\nЕсли транзакция не будет подтверждена с первого раза, пожалуйста, попробуйте еще раз через 10 минут.',reply_markup=keyboard)
+        bot.send_message(s[0], '💳 Введите количество ETH, которое хотите потратить.\nНаша команда сделает самые выгодные вложения!')
+        bot.register_next_step_callback(call,modelB)
     elif s[1] == "deposit":
         bot.send_message(s[0], "Здесь Вы можете пополнить баланс Вашего кошелька")
         bot.send_message(s[0], "Для этого перешлите ETH на Ваш личный кошелек: %s" % get_deposit_addr(call.from_user.id))
@@ -359,6 +361,9 @@ def callbacks(call):
             bot.send_message(s[0], "Транзакция успешно отправлена",reply_markup=keyboard)
         else:
             bot.send_message(s[0], "Похоже, что у вас не хватает денег на счету:(\nКошелек можно пополнить в личном кабинете")
+    elif s[1] == "question":
+        bot.send_message(s[0], "Задайте свой вопрос")
+        bot.register_next_step_callback(call,question)
     elif s[2] == "invest":
         key = types.InlineKeyboardMarkup()
         i = db.ico.find_one({"ico":s[1]})
