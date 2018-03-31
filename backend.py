@@ -1,9 +1,6 @@
 
 # coding: utf-8
 
-# In[1]:
-
-
 from pymongo import MongoClient
 import requests
 import datetime
@@ -12,23 +9,14 @@ import re
 from phonenumbers import parse, is_valid_number
 from web3 import Web3, HTTPProvider
 import time
-
-# In[2]:
-
-
 import rlp
 from ethereum.transactions import Transaction
-
-
-# In[130]:
 
 
 db = MongoClient('213.183.48.143').cryptobot
 w3 = Web3(HTTPProvider('https://ropsten.infura.io/xSb0KCuTom59NVjS446D'))
 
-
-# In[4]:
-
+#Initial add user to db
 def create_user(_id, username):
     if db.user.find_one({"username":username}) == None:
         user = {}
@@ -40,14 +28,13 @@ def create_user(_id, username):
         user['is_expert'] = False
         user['is_admin'] = False
         user['balance'] = 0.0
-        user['operations'] = ['Created user ' + str(datetime.datetime.now())]
+        user['operations'] = [{'timestamp' : str(datetime.datetime.now()),
+                              'op':'create_user'}]
         user['deposit_addr'] = requests.post('https://api.blockcypher.com/v1/eth/main/addrs').json()
 
         return db.user.insert_one(user)
 
-# In[5]:
-
-
+#Update user info
 def _update(_id,field, upd):
     if field == 'eth_addr':
         if validation.is_0x_prefixed(upd) and validation.is_address(upd) and len(upd) == 42:
@@ -68,10 +55,7 @@ def _update(_id,field, upd):
         except:
             return False
 
-
-# In[6]:
-
-
+#ADMIN. Add new ICO
 def create_ico(name, description):
     if name not in [item['ico'] for item in db.ico.find()]:
         return db.ico.insert_one({'ico' :name, 
@@ -82,68 +66,65 @@ def create_ico(name, description):
     else:
         return False
 
-
-# In[7]:
-
-
+#Lock/unlock ICO
 def change_lock(name):
     if db.ico.find_one({'ico': name})['locked'] == False:
         print('ICO locked')
         return db.ico.update_one({'ico': name}, {'$set':{'locked': True}})
     else:
         return db.ico.update_one({'ico': name}, {'$set':{'locked': False}})
+        print('ICO unlocked')
 
-
-# In[8]:
-
-
+#Get balance of user internal wallet
 def get_balance(_id):
     balance = w3.eth.getBalance('0x' + db.user.find_one({'id':_id})['deposit_addr']['address'])/1000000000000000000
     db.user.update_one({'id':_id}, {'$set':{'balance': balance}})
     return balance
 
-
-# In[118]:
-
-
+#Base transaction model
 def tx(from_addr, to_addr, signature, eth_value):
-    est_fee = w3.eth.estimateGas({'to':to_addr, 'from': from_addr, 'value': int(eth_value*1000000000000000000)}) * w3.eth.gasPrice
-    tx = Transaction(nonce= w3.eth.getTransactionCount(from_addr),
-                        gasprice= w3.eth.gasPrice,
-                        startgas= 21000,
-                        to= to_addr,
-                        value= int((eth_value * 1000000000000000000) - est_fee),
-                        data = b'')
-    
-    tx.sign(signature)
-    raw_tx = rlp.encode(tx)
-    raw_tx_hex = w3.toHex(raw_tx)
-    return w3.eth.sendRawTransaction(raw_tx_hex)
+    try:
+        est_fee = w3.eth.estimateGas({'to':to_addr, 'from': from_addr, 'value': int(eth_value*1000000000000000000)}) * w3.eth.gasPrice
+        tx = Transaction(nonce= w3.eth.getTransactionCount(from_addr),
+                            gasprice= w3.eth.gasPrice,
+                            startgas= 21000,
+                            to= to_addr,
+                            value= int((eth_value * 1000000000000000000) - est_fee),
+                            data = b'')
+
+        tx.sign(signature)
+        raw_tx = rlp.encode(tx)
+        raw_tx_hex = w3.toHex(raw_tx)
+        return w3.eth.sendRawTransaction(raw_tx_hex)
+    except:
+        return False
 
 
+#Contribute to ICO from internal wallet
 def contribute(_id, ico, eth_value):
     if get_balance(_id) >= eth_value:
         to_addr = '0x' + db.ico.find_one({'ico':ico})['address']['address']
-        print(to_addr)
         signature = '0x' + db.user.find_one({'id':_id})['deposit_addr']['private']
-        print(signature)
         from_addr = '0x' + db.user.find_one({'id':_id})['deposit_addr']['address']
-        print(from_addr)
-        return tx(from_addr, to_addr, signature, eth_value)
+        tx_hash = tx(from_addr, to_addr, signature, eth_value)
+        log = db.user.find_one({'id':_id})['operations']
+        log.append({'timestamp':str(datetime.datetime.now()),
+                   'op': 'contribute',
+                   'ico': ico,
+                   'eth':eth_value,
+                   'tx_hash':tx_hash})
+        db.user.update_one({'id':_id}, {'$set':{'operations':log}})
+        return tx_hash
     else:
         return False
 
 
-# In[87]:
-
-
+#Get deposit address for user's internal wallet
 def get_deposit_addr(_id):
     return '0x' + db.user.find_one({'id':_id})['deposit_addr']['address']
 
 
-# In[88]:
-
-
+#Initial add adress for expert chat income
 def add_expert(addr):
     if db.expert.find_one({'name': 'expert_wallet'}) == None:
         if validation.is_0x_prefixed(addr) and validation.is_address(addr) and len(addr) == 42:
@@ -153,20 +134,14 @@ def add_expert(addr):
     else:
         return False
 
-
-# In[89]:
-
-
+#Update address for expert chat income
 def update_expert(addr):
     if validation.is_0x_prefixed(addr) and validation.is_address(addr) and len(addr) == 42:
         return db.expert.update_one({'name': 'expert_wallet'}, {'$set':{'addr': addr}})
     else:
         return False
 
-
-# In[90]:
-
-
+#Purchase expert chat access
 def get_expert(_id, length):
     signature = '0x' + db.user.find_one({'id':_id})['deposit_addr']['private']
     from_addr = '0x' + db.user.find_one({'id':_id})['deposit_addr']['address']
@@ -187,24 +162,41 @@ def get_expert(_id, length):
         time = 'forever'
         
     if get_balance(_id) >= eth_value:
+        tx_hash = tx(from_addr, to_addr, signature, eth_value)
         db.user.update_one({'id':_id}, {'$set':{'is_expert': time}})
-        return tx(from_addr, to_addr, signature, eth_value)
+        log = db.user.find_one({'id':_id})['operations']
+        log.append({'timestamp':str(datetime.datetime.now()),
+                    'op': 'expert',
+                    'length':length,
+                   'tx_hash':tx_hash})
+        
+        return tx_hash
     else:
         return False
 
 
-# In[134]:
-
-
+#Get information on total funds raised by ICO in bot
 def get_ico_money(ico):
     return w3.eth.getBalance('0x' + db.ico.find_one({'ico':ico})['address']['address'])/10000000000000000000
 
 
-# In[110]:
-
-
+#Transfer funds raised from bot wallet to external one
 def transfer_from_ico(ico, to_addr, eth_value):
     signature = '0x' + db.ico.find_one({'ico':ico})['address']['private']
     from_addr = '0x' + db.ico.find_one({'ico':ico})['address']['address']
     return tx(from_addr, to_addr, signature, eth_value)
+
+
+#Get contributors with the amount for any specific ICO
+def get_contributors(ico):
+    contributions = []
+    for user in db.user.find():
+        for op in user['operations']:
+            if op['op'] == contribute and op['ico'] == 'zhopacoin':
+                contributions.append((user['username'], user['eth_addr'], op))
+    return contributions
+
+#Set new address for model B ICO funds
+def update_modelb(eth_addr):
+    return db.ico.update_one({'ico':'modelB'}, {'$set':{'address':{'address':eth_addr}}})
 
