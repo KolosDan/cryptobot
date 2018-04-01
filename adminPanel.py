@@ -35,7 +35,7 @@ class transferFrom:
 def admin(_id):
     keys = types.ReplyKeyboardMarkup()
     btn = types.InlineKeyboardButton(text="Добавить ICO")
-    btn1= types.InlineKeyboardButton(text="Закрыть ICO")
+    btn1= types.InlineKeyboardButton(text="Открыть/закрыть ICO")
     btn2= types.InlineKeyboardButton(text="Вывести деньги с ICO")
     btn3= types.InlineKeyboardButton(text="Задать эксперт-кошелек")
     btn4= types.InlineKeyboardButton(text="Изменить эксперт-кошелек")

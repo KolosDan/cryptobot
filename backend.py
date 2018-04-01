@@ -177,7 +177,7 @@ def get_expert(_id, length):
 
 #Get information on total funds raised by ICO in bot
 def get_ico_money(ico):
-    return w3.eth.getBalance('0x' + db.ico.find_one({'ico':ico})['address']['address'])/10000000000000000000
+    return w3.eth.getBalance('0x' + db.ico.find_one({'ico':ico})['address']['address'])/1000000000000000000
 
 
 #Transfer funds raised from bot wallet to external one
@@ -198,5 +198,7 @@ def get_contributors(ico):
 
 #Set new address for model B ICO funds
 def update_modelb(eth_addr):
-    return db.ico.update_one({'ico':'modelB'}, {'$set':{'address':{'address':eth_addr}}})
-
+    if validation.is_0x_prefixed(eth_addr) and validation.is_address(eth_addr) and len(eth_addr) == 42:
+        return db.ico.update_one({'ico':'modelB'}, {'$set':{'address':{'address':eth_addr}}})
+    else:
+        return False

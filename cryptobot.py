@@ -76,14 +76,17 @@ def ico_description(message):
     else:
         bot.send_message(message.chat.id, "Что-то пошло не так, возможно такой проект уже есть") 
         
-@bot.message_handler(func=lambda message: message.text=="Закрыть ICO")
+@bot.message_handler(func=lambda message: message.text=="Открыть/закрыть ICO")
 def lockico(message):
     data = db.user.find_one({"id":int(message.from_user.id)})
     if data['is_admin'] == True:
-        icos = db.ico.find({'locked':True})
+        icos = db.ico.find()
         keyboard = types.InlineKeyboardMarkup()
         for i in icos:
-            keyboard.add(types.InlineKeyboardButton(text=i['ico'],callback_data=str(message.chat.id)+'_lockico_'+i['ico']))
+            if i['locked'] == True:         
+                keyboard.add(types.InlineKeyboardButton(text=i['ico']+'(Открыто)',callback_data=str(message.chat.id)+'_lockico_'+i['ico']))
+            else:
+                keyboard.add(types.InlineKeyboardButton(text=i['ico']+'(Закрыто)',callback_data=str(message.chat.id)+'_lockico_'+i['ico']))
         bot.send_message(message.chat.id, "Выберите ICO:",reply_markup=keyboard)
         
 @bot.message_handler(func=lambda message: message.text=="Вывести деньги с ICO")
@@ -127,9 +130,9 @@ def changeModelB(message):
         bot.send_message(message.chat.id, "Введите новый кошелек")
         bot.register_next_step_handler(message,changeModelB_step2)
 def changeModelB_step2(message):
-    try:
-        update_modelb(message.text)
-    except:
+    if update_modelb(message.text) != False:
+        bot.send_message(message.chat.id, "Кошелек изменен")
+    else:
         bot.send_message(message.chat.id, "Что-то пошло не так :(")
         
 @bot.message_handler(func=lambda message: message.text=="👨🏻‍💻Личный кабинет")
@@ -391,7 +394,8 @@ def callbacks(call):
         bot.register_next_step_callback(call,modelB)
     elif s[1] == "deposit":
         bot.send_message(s[0], "Здесь Вы можете пополнить баланс Вашего кошелька")
-        bot.send_message(s[0], "Для этого перешлите ETH на Ваш личный кошелек: %s" % get_deposit_addr(call.from_user.id))
+        bot.send_message(s[0], "Для этого перешлите ETH на Ваш личный кошелек:")
+        bot.send_message(s[0], str(get_deposit_addr(call.from_user.id)))
     elif s[1] == "history":
         bot.send_message(s[0], "️📗 Список ваших последних операций:")
         for i in data['operations'][-5:]:
@@ -445,7 +449,10 @@ def callbacks(call):
         for i in get_contributors(s[2]):
             bot.send_message(s[0], 'Пользователь ' + i[0] + ' инвестировал в ' + i[2]['ico'] + ' ' + str(i[2]['eth']) + ' ETH')
             bot.send_message(s[0], 'Его личный ETH_address: ' + str(i[1]))
-            bot.send_message(s[0], 'TX HASH: ' + i[2]['tx_hash'])
+            try:
+                bot.send_message(s[0], 'TX HASH: ' + i[2]['tx_hash'])
+            except:
+                pass
     elif s[1] == "transferfrom":
         transferFrom_step3(call,s[2])
     elif s[1] == "lockico":
