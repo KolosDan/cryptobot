@@ -23,7 +23,12 @@ class ICO:
     def __init__(self):
         self.name = None
         self.description = None
-
+        
+class transferFrom:
+    def __init__(self):
+        self.name = None
+        self.value = None
+        self.addr = None
 
 # In[8]:
   
@@ -31,11 +36,15 @@ def admin(_id):
     keys = types.ReplyKeyboardMarkup()
     btn = types.InlineKeyboardButton(text="Добавить ICO")
     btn1= types.InlineKeyboardButton(text="Закрыть ICO")
+    btn2= types.InlineKeyboardButton(text="Вывести деньги с ICO")
+    btn3= types.InlineKeyboardButton(text="Задать эксперт-кошелек")
+    btn4= types.InlineKeyboardButton(text="Изменить эксперт-кошелек")
+    btn5= types.InlineKeyboardButton(text="Изменить кошелек модели B")
+    btn6= types.InlineKeyboardButton(text="🔙 Главное меню")
+    btn7= types.InlineKeyboardButton(text="Посмотреть вложения в ICO")
     keys.row(btn,btn1)
-    btn2= types.InlineKeyboardButton(text="Задать эксперт-кошелек")
-    btn3= types.InlineKeyboardButton(text="Изменить эксперт-кошелек")
     keys.row(btn2,btn3)
-    btn4= types.InlineKeyboardButton(text="🔙 Главное меню")
-    keys.row(btn4)
+    keys.row(btn4,btn5)
+    keys.row(btn7,btn6)
     return keys
 

@@ -107,13 +107,14 @@ def contribute(_id, ico, eth_value):
         signature = '0x' + db.user.find_one({'id':_id})['deposit_addr']['private']
         from_addr = '0x' + db.user.find_one({'id':_id})['deposit_addr']['address']
         tx_hash = tx(from_addr, to_addr, signature, eth_value)
-        log = db.user.find_one({'id':_id})['operations']
-        log.append({'timestamp':str(datetime.datetime.now()),
+        if tx_hash != False:
+            log = db.user.find_one({'id':_id})['operations']
+            log.append({'timestamp':str(datetime.datetime.now()),
                    'op': 'contribute',
                    'ico': ico,
                    'eth':eth_value,
                    'tx_hash':tx_hash})
-        db.user.update_one({'id':_id}, {'$set':{'operations':log}})
+            db.user.update_one({'id':_id}, {'$set':{'operations':log}})
         return tx_hash
     else:
         return False
@@ -169,7 +170,6 @@ def get_expert(_id, length):
                     'op': 'expert',
                     'length':length,
                    'tx_hash':tx_hash})
-        
         return tx_hash
     else:
         return False
@@ -192,7 +192,7 @@ def get_contributors(ico):
     contributions = []
     for user in db.user.find():
         for op in user['operations']:
-            if op['op'] == contribute and op['ico'] == 'zhopacoin':
+            if op['op'] == "contribute" and op['ico'] == ico:
                 contributions.append((user['username'], user['eth_addr'], op))
     return contributions
 
