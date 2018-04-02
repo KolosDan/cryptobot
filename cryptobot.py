@@ -103,7 +103,7 @@ def back(message):
 def icobalance(message):
     icos = db.ico.find()
     keyboard = types.InlineKeyboardMarkup()
-    for i in icos:       
+    for i in icos:
         keyboard.add(types.InlineKeyboardButton(text=i['ico'],callback_data=str(message.chat.id)+'_icobalance_'+i['ico']))
     bot.send_message(message.chat.id, "Выберите ICO:",reply_markup=keyboard)
 @bot.message_handler(func=lambda message: message.text=="Вывести деньги с ICO")
