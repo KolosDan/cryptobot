@@ -72,7 +72,7 @@ def ico_name(message):
 def ico_description(message):
     ico.description = message.text
     if create_ico(ico.name,ico.description) != False:
-        bot.send_message(message.chat.id, "ICO Добавлено!") 
+        bot.send_message(message.chat.id, "ICO Добавлено!")
     else:
         bot.send_message(message.chat.id, "Что-то пошло не так, возможно такой проект уже есть") 
         
@@ -159,7 +159,15 @@ def changeModelB(message):
 def changeModelB_step2(message):
     update_modelb(message.text)
     bot.send_message(message.chat.id, "Кошелек изменен")
-        
+    
+@bot.message_handler(func=lambda message: message.text=="Вопросы клиентов")
+def customerQ(message):
+    keybd = types.InlineKeyboardMarkup()
+    for i in db.answer.find():
+        b = types.InlineKeyboardButton(text="Ответить", callback_data=str(message.chat.id) + "_answer_"+str(i['username']))
+        keybd.row(b)
+        bot.send_message(message.chat.id,"*"+str(i["username"])+"*",parse_mode="Markdown")
+        bot.send_message(message.chat.id, i["question"],reply_markup=keybd)
 @bot.message_handler(func=lambda message: message.text=="👨🏻‍💻Личный кабинет")
 def cabinet(message):
     keybd = types.InlineKeyboardMarkup()
@@ -236,11 +244,6 @@ def mining(message):
 def btc(message):
     bot.send_message(message.chat.id, "🎁Розыгрыш BTC")
     
-@bot.message_handler(func=lambda message: message.text=="💳 Изменить ETH кошелек")
-def eth(message):
-    bot.send_message(message.chat.id, "Введите ETH кошелек")
-    bot.register_next_step_handler(message,wallet_change)
-    
 def wallet_change(message):
     if _update(message.from_user.id,"eth_addr",message.text) != False:
         bot.send_message(message.chat.id, "Кошелек успешно обновлен!")
@@ -254,9 +257,9 @@ def takepart(message):
     btn1= types.InlineKeyboardButton(text="Модель 🅱️", callback_data=str(message.chat.id) +"_modelB_")
     keyboard.row(btn,btn1)
     bot.send_message(message.chat.id, """У нас есть 2 формата участия в нашем ICO клубе:\n
-    Модель 🅰️ – участие в пуле на конкретное заявленное ICO.\nВыбор проекта осуществляется всеми участниками из предложенных и отобранных нашей командой аналитиков.\nКомиссия клуба: 5-15%\n
-    Модель 🅱️ – участие в 5 проектах на усмотрение клуба.\nУчастника не нужно заморачиваться и тратить свое время на выбор проектов, регистрации и прочее.\nНаша команда сделает это за вас. Проекты будут отобраны в течении 1-2 месяцев.\nКомиссия клуба: 12%\n
-    🎁 Всем участникам ICO клуба дается доступ на 1 месяц к Приватному чату экспертов Private Crypto в подарок.""")
+Модель 🅰️ – участие в пуле на конкретное заявленное ICO.\nВыбор проекта осуществляется всеми участниками из предложенных и отобранных нашей командой аналитиков.\nКомиссия клуба: 5-15%\n
+Модель 🅱️ – участие в 5 проектах на усмотрение клуба.\nУчастника не нужно заморачиваться и тратить свое время на выбор проектов, регистрации и прочее.\nНаша команда сделает это за вас. Проекты будут отобраны в течении 1-2 месяцев.\nКомиссия клуба: 12%\n
+🎁 Всем участникам ICO клуба дается доступ на 1 месяц к Приватному чату экспертов Private Crypto в подарок.""")
     bot.send_message(message.chat.id, "Выбери свою модель участия:", reply_markup=keyboard)
     
 @bot.message_handler(func=lambda message: message.text=="🏆 Преимущества клуба")
@@ -296,7 +299,8 @@ def trade_btc(message):
     
 @bot.message_handler(commands=['change'])
 def change(message):
-    bot.register_next_step_handler(message,eth)
+    bot.send_message(message.chat.id, "Введите ETH кошелек")
+    bot.register_next_step_handler(message,wallet_change)
 
 def syka(call,_id,name):
     user = Payment()
@@ -333,7 +337,7 @@ def modelB(message):
         bot.send_message(message.chat.id,'Похоже, что Вы ввели что-то неправильно\nНажмите на кнопу снова')
         
 def question(message):
-    print(message.text)
+    db.answer.insert_one({"username":message.from_user.username,"question":message.text})
     bot.send_message(message.chat.id, "️Ваш вопрос напрален администратору\nС вами свяжутся в ближайшее время")
     
 def transferFrom_step3(call,name):
@@ -363,13 +367,13 @@ def callbacks(call):
     s = call.data.split("_")
     if s[1] == "eth":
         if data['eth_addr'] == None:
-            bot.send_message(s[0], "💳 У Вас не задан ETH адрес:")
+            bot.send_message(s[0], "💳 У Вас не задан ETH адрес")
         else:
             bot.send_message(s[0], "💳 Ваш текущий адрес: %s" % data['eth_addr'])
         bot.send_message(s[0], "️❕ Вы всегда можете задать новый адрес командой: /change")
         bot.send_message(s[0], "⚠️ Пожалуйста, НЕ вводите адрес биржевого ETH кошелька")
     elif s[1] == "admin":
-        bot.send_message(s[0], "че пацан админ??",reply_markup=admin(call.from_user.id))
+        bot.send_message(s[0], "Раздел администратора",reply_markup=admin(call.from_user.id))
     elif s[1] == "modelA":
         icos = db.ico.find({'locked':True})
         for i in icos[int(s[2]):int(s[2])+5]:
@@ -438,6 +442,9 @@ def callbacks(call):
     elif s[1] == "lockico":
         change_lock(s[2])
         bot.send_message(s[0], "Успешно")
+    elif s[1] == "answer":
+        bot.send_message(s[0],"Напишите пользователю "+"@"+ str(s[2]))
+        db.answer.delete_one({'username': str(s[2])})
     elif s[1] == "chat":
         if get_expert(call.from_user.id,s[2]) != False:
             btn = types.InlineKeyboardButton(text="Чат",url='https://habrahabr.ru')

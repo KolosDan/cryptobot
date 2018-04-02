@@ -42,7 +42,7 @@ def admin(_id):
     btn5= types.InlineKeyboardButton(text="🔙 Главное меню")
     keys.row(btn,btn1)
     keys.row(btn2,btn3)
-    keys.row(btn4,btn5)
+    keys.row(btn5,btn4)
     return keys
 
 def admin2(_id):
