@@ -89,12 +89,12 @@ def lockico(message):
                 keyboard.add(types.InlineKeyboardButton(text=i['ico']+'(Закрыто)',callback_data=str(message.chat.id)+'_lockico_'+i['ico']))
         bot.send_message(message.chat.id, "Выберите ICO:",reply_markup=keyboard)
 
-@bot.message_handler(func=lambda message: message.text=="Далее »")
+@bot.message_handler(func=lambda message: message.text=="Далее ▶️")
 def forward(message):  
     data = db.user.find_one({"id":int(message.from_user.id)})
     if data['is_admin'] == True:
         bot.send_message(message.chat.id, "Меню 2",reply_markup=admin2(message.from_user.id))
-@bot.message_handler(func=lambda message: message.text=="« Назад")
+@bot.message_handler(func=lambda message: message.text=="◀️  Назад")
 def back(message):
     data = db.user.find_one({"id":int(message.from_user.id)})
     if data['is_admin'] == True:
@@ -132,7 +132,6 @@ def updatexpert_2(message):
 @bot.message_handler(func=lambda message: message.text=="Задать эксперт-кошелек")
 def addexpert(message):
     bot.send_message(message.chat.id, "Впишите адрес")
-    bot.send_message(message.chat.id, "Адрес нужно вводить БЕЗ '0x'")
     bot.register_next_step_handler(message,addexpert_2)
     
 def addexpert_2(message):
@@ -146,7 +145,6 @@ def changeModelB(message):
     data = db.user.find_one({"id":int(message.from_user.id)})
     if data['is_admin'] == True:
         bot.send_message(message.chat.id, "Введите новый кошелек")
-        bot.send_message(message.chat.id, "Адрес нужно вводить БЕЗ '0x'")
         bot.register_next_step_handler(message,changeModelB_step2)
 def changeModelB_step2(message):
     update_modelb(message.text)
@@ -519,4 +517,10 @@ def signal_handler(signal_number, frame):
 
 if __name__ == "__main__":
     main()
+
+
+# In[6]:
+
+
+get_balance('0x3d9a93c1a4be6f07939f51c44a860302086fa047')
 
