@@ -89,16 +89,26 @@ def lockico(message):
                 keyboard.add(types.InlineKeyboardButton(text=i['ico']+'(Закрыто)',callback_data=str(message.chat.id)+'_lockico_'+i['ico']))
         bot.send_message(message.chat.id, "Выберите ICO:",reply_markup=keyboard)
 
-@bot.message_handler(func=lambda message: message.text=="Далее ▶️")
+@bot.message_handler(func=lambda message: message.text=="Далее ⏩")
 def forward(message):  
     data = db.user.find_one({"id":int(message.from_user.id)})
     if data['is_admin'] == True:
         bot.send_message(message.chat.id, "Меню 2",reply_markup=admin2(message.from_user.id))
-@bot.message_handler(func=lambda message: message.text=="◀️  Назад")
+@bot.message_handler(func=lambda message: message.text=="◀️Назад")
 def back(message):
     data = db.user.find_one({"id":int(message.from_user.id)})
     if data['is_admin'] == True:
         bot.send_message(message.chat.id, "Меню",reply_markup=admin(message.from_user.id))
+@bot.message_handler(func=lambda message: message.text=="Далее▶️")
+def forward2(message):
+    data = db.user.find_one({"id":int(message.from_user.id)})
+    if data['is_admin'] == True:
+        bot.send_message(message.chat.id, "Меню 3",reply_markup=admin3(message.from_user.id))
+@bot.message_handler(func=lambda message: message.text=="⏪Назад")
+def back2(message):  
+    data = db.user.find_one({"id":int(message.from_user.id)})
+    if data['is_admin'] == True:
+        bot.send_message(message.chat.id, "Меню 2",reply_markup=admin2(message.from_user.id))
 @bot.message_handler(func=lambda message: message.text=="Посмотреть баланс ICO")
 def icobalance(message):
     icos = db.ico.find()
@@ -139,7 +149,7 @@ def addexpert_2(message):
         bot.send_message(message.chat.id, "Адрес изменен")
     else:
         bot.send_message(message.chat.id, "Кошелек уже создан")
-    
+
 @bot.message_handler(func=lambda message: message.text=="Изменить кошелек модели B")
 def changeModelB(message):
     data = db.user.find_one({"id":int(message.from_user.id)})
@@ -158,29 +168,21 @@ def cabinet(message):
         admin_button = types.InlineKeyboardButton(text="Админка", callback_data=str(message.chat.id) + "_admin")
         keybd.row(admin_button)
     b = types.InlineKeyboardButton(text="💳 ETH кошелек", callback_data=str(message.chat.id) + "_eth")
-    b1= types.InlineKeyboardButton(text="📨 EMAIL адрес", callback_data=str(message.chat.id) +"_email")
-    b2= types.InlineKeyboardButton(text="📱 Номер телефона", callback_data=str(message.chat.id) +"_phone")
     b3= types.InlineKeyboardButton(text="🕓 История", callback_data=str(message.chat.id) +"_history")
     b4 = types.InlineKeyboardButton(text="💰 Пополнить баланс", callback_data=str(message.chat.id) + "_deposit")
-    keybd.row(b,b1)
-    keybd.row(b2,b3)
+    keybd.row(b,b3)
     keybd.row(b4)
     bot.send_message(message.chat.id, "👨🏻‍💻 Кабинет")
-    bot.send_message(message.chat.id, "🔑 Вы не являетесь членом нашего закрытого сообщества Private Crypto.\nДля вас действует стандартная комиссия на ICO клуб.\nДля вас не действует скидка на оборудование для майнинга.\nДля вас не действует скидка на Приватный канал с торговыми рекомендациями.")
+    if data['is_expert'] == False:
+        bot.send_message(message.chat.id, "🔑 Вы не являетесь членом нашего закрытого сообщества Private Crypto.\nДля вас действует стандартная комиссия на ICO клуб.\nДля вас не действует скидка на оборудование для майнинга.\nДля вас не действует скидка на Приватный канал с торговыми рекомендациями.")
+    else:
+        bot.send_message(message.chat.id, "🔑 Вы являетесь членом нашего закрытого сообщества Private Crypto.\n✅Для вас действует особая комиссия на ICO клуб.\n✅Для вас действует скидка на оборудование для майнинга.\n✅Для вас действует скидка на Приватный канал с торговыми рекомендациями.")
     bot.send_message(message.chat.id, "🆔 Ваш id клиента: %s" % data["id"])
     bot.send_message(message.chat.id, "💵 Баланс кошелька, привязанного в кабинете: %s Eth" % get_balance(message.from_user.id))
     if data['eth_addr'] == None:
-        bot.send_message(message.chat.id, "💳 У Вас нет ETH кошелька")
+        bot.send_message(message.chat.id, "💳 У Вас нет ETH кошелька",reply_markup=keybd)
     else:
-        bot.send_message(message.chat.id, "💳 Адрес Вашего ETH кошелька: %s" % data['eth_addr'])
-    if data['email'] == None:
-        bot.send_message(message.chat.id, "📨 У Вас не задан e-mail")
-    else:
-        bot.send_message(message.chat.id, "📨 Ваш e-mail: %s" % data['email'])
-    if data['phone'] == None:
-        bot.send_message(message.chat.id, "📱 У Вас не задан номер телефона",reply_markup=keybd)
-    else:
-        bot.send_message(message.chat.id, "📱 Ваш номер телефона: %s" % data['phone'],reply_markup=keybd)
+        bot.send_message(message.chat.id, "💳 Адрес Вашего ETH кошелька: %s" % data['eth_addr'],reply_markup=keybd)
 
 @bot.message_handler(func=lambda message: message.text=="🗣Приватный чат экспертов")
 def private(message):
@@ -234,28 +236,6 @@ def mining(message):
 def btc(message):
     bot.send_message(message.chat.id, "🎁Розыгрыш BTC")
     
-@bot.message_handler(func=lambda message: message.text=="📱 Изменить номер телефона")
-def phone(message):
-    bot.send_message(message.chat.id, "Введите номер в формате +79000000000")
-    bot.register_next_step_handler(message,phone_change)
-
-def phone_change(message):
-    if _update(message.from_user.id,"phone",message.text) != False:
-        bot.send_message(message.chat.id, "Телефон успешно обновлен!")
-    else:
-        bot.send_message(message.chat.id, "Что-то пошло не так:(\nПроверьте правильность введенных данных и нажмите на кнопку снова")
-        
-@bot.message_handler(func=lambda message: message.text=="📨 Изменить Email")
-def email(message):
-    bot.send_message(message.chat.id, "Введите Email")
-    bot.register_next_step_handler(message,email_change)
-
-def email_change(message):
-    if _update(message.from_user.id,"email",message.text) != False:
-        bot.send_message(message.chat.id, "Email успешно обновлен!")
-    else:
-        bot.send_message(message.chat.id, "Что-то пошло не так:(\nПроверьте правильность введенных данных и нажмите на кнопку снова")
-    
 @bot.message_handler(func=lambda message: message.text=="💳 Изменить ETH кошелек")
 def eth(message):
     bot.send_message(message.chat.id, "Введите ETH кошелек")
@@ -270,13 +250,13 @@ def wallet_change(message):
 @bot.message_handler(func=lambda message: message.text=="🤝 Принять участие")
 def takepart(message):
     keyboard = types.InlineKeyboardMarkup()
-    btn = types.InlineKeyboardButton(text="Модель 🅰️", callback_data=str(message.chat.id) + "_modelA")
-    btn1= types.InlineKeyboardButton(text="Модель 🅱️", callback_data=str(message.chat.id) +"_modelB")
+    btn = types.InlineKeyboardButton(text="Модель 🅰️", callback_data=str(message.chat.id) + "_modelA_0")
+    btn1= types.InlineKeyboardButton(text="Модель 🅱️", callback_data=str(message.chat.id) +"_modelB_")
     keyboard.row(btn,btn1)
-    bot.send_message(message.chat.id, "У нас есть 2 формата участия в нашем ICO клубе:")
-    bot.send_message(message.chat.id, "Модель 🅰️ – участие в пуле на конкретное заявленное ICO.\nВыбор проекта осуществляется всеми участниками из предложенных и отобранных нашей командой аналитиков.\nКомиссия клуба: 5-15%")
-    bot.send_message(message.chat.id, "Модель 🅱️ – участие в 5 проектах на усмотрение клуба.\nУчастника не нужно заморачиваться и тратить свое время на выбор проектов, регистрации и прочее.\nНаша команда сделает это за вас. Проекты будут отобраны в течении 1-2 месяцев.\nКомиссия клуба: 12%")
-    bot.send_message(message.chat.id, "🎁 Всем участникам ICO клуба дается доступ на 1 месяц к Приватному чату экспертов Private Crypto в подарок.")
+    bot.send_message(message.chat.id, """У нас есть 2 формата участия в нашем ICO клубе:\n
+    Модель 🅰️ – участие в пуле на конкретное заявленное ICO.\nВыбор проекта осуществляется всеми участниками из предложенных и отобранных нашей командой аналитиков.\nКомиссия клуба: 5-15%\n
+    Модель 🅱️ – участие в 5 проектах на усмотрение клуба.\nУчастника не нужно заморачиваться и тратить свое время на выбор проектов, регистрации и прочее.\nНаша команда сделает это за вас. Проекты будут отобраны в течении 1-2 месяцев.\nКомиссия клуба: 12%\n
+    🎁 Всем участникам ICO клуба дается доступ на 1 месяц к Приватному чату экспертов Private Crypto в подарок.""")
     bot.send_message(message.chat.id, "Выбери свою модель участия:", reply_markup=keyboard)
     
 @bot.message_handler(func=lambda message: message.text=="🏆 Преимущества клуба")
@@ -316,14 +296,7 @@ def trade_btc(message):
     
 @bot.message_handler(commands=['change'])
 def change(message):
-    keyboard = types.ReplyKeyboardMarkup()
-    btn = types.InlineKeyboardButton(text="📱 Изменить номер телефона")
-    btn1= types.InlineKeyboardButton(text="📨 Изменить Email")
-    btn2= types.InlineKeyboardButton(text="💳 Изменить ETH кошелек")
-    btn3= types.InlineKeyboardButton(text="🔙 Главное меню")
-    keyboard.row(btn,btn1)
-    keyboard.row(btn2,btn3)
-    bot.send_message(message.chat.id, "Хотите изменить данные? Выбирайте, что именно:",reply_markup=keyboard)
+    bot.register_next_step_handler(message,eth)
 
 def syka(call,_id,name):
     user = Payment()
@@ -398,11 +371,11 @@ def callbacks(call):
     elif s[1] == "admin":
         bot.send_message(s[0], "че пацан админ??",reply_markup=admin(call.from_user.id))
     elif s[1] == "modelA":
-        cnt = 0
         icos = db.ico.find({'locked':True})
-        for i in icos:
+        for i in icos[int(s[2]):int(s[2])+5]:
             if i['ico'] != "modelB":
                 keyboard.add(types.InlineKeyboardButton(text="✅ "+i['ico'],callback_data=s[0]+"_"+i['ico']+"_invest"))
+        keyboard.add(types.InlineKeyboardButton(text="Дальше ⏩",callback_data=s[0]+"_modelA_"+str(int(s[2])+5)))
         bot.send_message(s[0], "Просмотр проектов",reply_markup=keyboard)
     elif s[1] == "modelB":
         bot.send_message(s[0], '💳 Введите количество ETH, которое хотите потратить.\nНаша команда сделает самые выгодные вложения!')
@@ -423,18 +396,6 @@ def callbacks(call):
             elif i['op'] == "expert":
                 bot.send_message(s[0],"*"+str(i['timestamp'].split('.')[0])+"*",parse_mode="Markdown")
                 bot.send_message(s[0], "Получен доступ к чату экспертов")
-    elif s[1] == "phone":
-        if data['phone'] == None:
-            bot.send_message(s[0], "📱 У Вас не задан номер")
-        else:
-            bot.send_message(s[0], "📱 Ваш текущий номер: %s" % data['phone'])
-        bot.send_message(s[0], "️❕ Вы всегда можете задать новый номер командой: /change")
-    elif s[1] == "email":
-        if data['email'] == None:
-            bot.send_message(s[0], "📨 У Вас не задан Email")
-        else:
-            bot.send_message(s[0], "📨 Ваш текущий Email: %s" % data['email'])
-        bot.send_message(s[0], "️❕ Вы всегда можете задать новый Email командой: /change")
     elif s[1] == "access":
         btn = types.InlineKeyboardButton(text="1 месяц",callback_data=s[0]+"_chat_month")
         btn1 = types.InlineKeyboardButton(text="3 месяца",callback_data=s[0]+"_chat_3month")
@@ -517,10 +478,4 @@ def signal_handler(signal_number, frame):
 
 if __name__ == "__main__":
     main()
-
-
-# In[6]:
-
-
-get_balance('0x3d9a93c1a4be6f07939f51c44a860302086fa047')
 
