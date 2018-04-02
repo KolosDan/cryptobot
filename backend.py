@@ -128,19 +128,13 @@ def get_deposit_addr(_id):
 #Initial add adress for expert chat income
 def add_expert(addr):
     if db.expert.find_one({'name': 'expert_wallet'}) == None:
-        if validation.is_0x_prefixed(addr) and validation.is_address(addr) and len(addr) == 42:
-            return db.expert.insert_one({'name':'expert_wallet', 'addr': addr})
-        else:
-            return False
+        return db.expert.insert_one({'name':'expert_wallet', 'addr': addr})
     else:
         return False
 
 #Update address for expert chat income
 def update_expert(addr):
-    if validation.is_0x_prefixed(addr) and validation.is_address(addr) and len(addr) == 42:
-        return db.expert.update_one({'name': 'expert_wallet'}, {'$set':{'addr': addr}})
-    else:
-        return False
+    return db.expert.update_one({'name': 'expert_wallet'}, {'$set':{'addr': addr}})
 
 #Purchase expert chat access
 def get_expert(_id, length):
@@ -198,7 +192,4 @@ def get_contributors(ico):
 
 #Set new address for model B ICO funds
 def update_modelb(eth_addr):
-    if validation.is_0x_prefixed(eth_addr) and validation.is_address(eth_addr) and len(eth_addr) == 42:
-        return db.ico.update_one({'ico':'modelB'}, {'$set':{'address':{'address':eth_addr}}})
-    else:
-        return False
+    return db.ico.update_one({'ico':'modelB'}, {'$set':{'address':{'address':eth_addr}}})

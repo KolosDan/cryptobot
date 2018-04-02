@@ -88,7 +88,24 @@ def lockico(message):
             else:
                 keyboard.add(types.InlineKeyboardButton(text=i['ico']+'(Закрыто)',callback_data=str(message.chat.id)+'_lockico_'+i['ico']))
         bot.send_message(message.chat.id, "Выберите ICO:",reply_markup=keyboard)
-        
+
+@bot.message_handler(func=lambda message: message.text=="Далее »")
+def forward(message):  
+    data = db.user.find_one({"id":int(message.from_user.id)})
+    if data['is_admin'] == True:
+        bot.send_message(message.chat.id, "Меню 2",reply_markup=admin2(message.from_user.id))
+@bot.message_handler(func=lambda message: message.text=="« Назад")
+def back(message):
+    data = db.user.find_one({"id":int(message.from_user.id)})
+    if data['is_admin'] == True:
+        bot.send_message(message.chat.id, "Меню",reply_markup=admin(message.from_user.id))
+@bot.message_handler(func=lambda message: message.text=="Посмотреть баланс ICO")
+def icobalance(message):
+    icos = db.ico.find()
+    keyboard = types.InlineKeyboardMarkup()
+    for i in icos:       
+        keyboard.add(types.InlineKeyboardButton(text=i['ico'],callback_data=str(message.chat.id)+'_icobalance_'+i['ico']))
+    bot.send_message(message.chat.id, "Выберите ICO:",reply_markup=keyboard)
 @bot.message_handler(func=lambda message: message.text=="Вывести деньги с ICO")
 def transferFromIco(message):
     data = db.user.find_one({"id":int(message.from_user.id)})
@@ -114,26 +131,26 @@ def updatexpert_2(message):
     
 @bot.message_handler(func=lambda message: message.text=="Задать эксперт-кошелек")
 def addexpert(message):
-    bot.send_message(message.chat.id, "Впишите адрес (ОЧЕНЬ ВАЖНО ввести корректный адрес)")
+    bot.send_message(message.chat.id, "Впишите адрес")
+    bot.send_message(message.chat.id, "Адрес нужно вводить БЕЗ '0x'")
     bot.register_next_step_handler(message,addexpert_2)
     
 def addexpert_2(message):
     if add_expert(message.text) != False:
         bot.send_message(message.chat.id, "Адрес изменен")
     else:
-        bot.send_message(message.chat.id, "Кошелек уже создан или данные введены неверно")
+        bot.send_message(message.chat.id, "Кошелек уже создан")
     
 @bot.message_handler(func=lambda message: message.text=="Изменить кошелек модели B")
 def changeModelB(message):
     data = db.user.find_one({"id":int(message.from_user.id)})
     if data['is_admin'] == True:
         bot.send_message(message.chat.id, "Введите новый кошелек")
+        bot.send_message(message.chat.id, "Адрес нужно вводить БЕЗ '0x'")
         bot.register_next_step_handler(message,changeModelB_step2)
 def changeModelB_step2(message):
-    if update_modelb(message.text) != False:
-        bot.send_message(message.chat.id, "Кошелек изменен")
-    else:
-        bot.send_message(message.chat.id, "Что-то пошло не так :(")
+    update_modelb(message.text)
+    bot.send_message(message.chat.id, "Кошелек изменен")
         
 @bot.message_handler(func=lambda message: message.text=="👨🏻‍💻Личный кабинет")
 def cabinet(message):
@@ -446,15 +463,19 @@ def callbacks(call):
             else:
                 bot.send_message(s[0], "У вас недостаточно средств для данной операции или сумма транзакции слишком мала:(")
     elif s[1] == "getcontr":
+        if get_contributors(s[2]) ==[]:
+            bot.send_message(s[0], 'Еще нет вложений')
         for i in get_contributors(s[2]):
-            bot.send_message(s[0], 'Пользователь ' + i[0] + ' инвестировал в ' + i[2]['ico'] + ' ' + str(i[2]['eth']) + ' ETH')
-            bot.send_message(s[0], 'Его личный ETH_address: ' + str(i[1]))
             try:
+                bot.send_message(s[0], 'Пользователь ' + i[0] + ' инвестировал в ' + i[2]['ico'] + ' ' + str(i[2]['eth']) + ' ETH')
+                bot.send_message(s[0], 'Его личный ETH_address: ' + str(i[1]))
                 bot.send_message(s[0], 'TX HASH: ' + i[2]['tx_hash'])
             except:
                 pass
     elif s[1] == "transferfrom":
         transferFrom_step3(call,s[2])
+    elif s[1] == "icobalance":
+        bot.send_message(s[0],"Баланс "+str(get_ico_money(s[2]))+" ETH")
     elif s[1] == "lockico":
         change_lock(s[2])
         bot.send_message(s[0], "Успешно")
