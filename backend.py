@@ -30,8 +30,12 @@ def create_user(_id, username):
         user['balance'] = 0.0
         user['operations'] = [{'timestamp' : str(datetime.datetime.now()),
                               'op':'create_user'}]
-        user['deposit_addr'] = requests.post('https://api.blockcypher.com/v1/eth/main/addrs').json()
-
+        addr_book = requests.post('https://api.blockcypher.com/v1/eth/main/addrs').json()
+        addr_book['address'] = '0x' + addr_book['address']
+        addr_book['private'] = '0x' + addr_book['private']
+        addr_book['public'] = '0x' + addr_book['public']
+        user['deposit_addr'] = addr_book
+        
         return db.user.insert_one(user)
 
 #Update user info
@@ -58,8 +62,12 @@ def _update(_id,field, upd):
 #ADMIN. Add new ICO
 def create_ico(name, description):
     if name not in [item['ico'] for item in db.ico.find()]:
+        addr_book = requests.post('https://api.blockcypher.com/v1/eth/main/addrs').json()
+        addr_book['address'] = '0x' + addr_book['address']
+        addr_book['private'] = '0x' + addr_book['private']
+        addr_book['public'] = '0x' + addr_book['public']
         return db.ico.insert_one({'ico' :name, 
-                      'address' : requests.post('https://api.blockcypher.com/v1/eth/main/addrs').json(),
+                      'address' : addr_book,
                       'description' : description,
                       'contributors' : [],
                              'locked':True})
@@ -77,7 +85,7 @@ def change_lock(name):
 
 #Get balance of user internal wallet
 def get_balance(_id):
-    balance = w3.eth.getBalance('0x' + db.user.find_one({'id':_id})['deposit_addr']['address'])/1000000000000000000
+    balance = w3.eth.getBalance(db.user.find_one({'id':_id})['deposit_addr']['address'])/1000000000000000000
     db.user.update_one({'id':_id}, {'$set':{'balance': balance}})
     return balance
 
@@ -103,9 +111,9 @@ def tx(from_addr, to_addr, signature, eth_value):
 #Contribute to ICO from internal wallet
 def contribute(_id, ico, eth_value):
     if get_balance(_id) >= eth_value:
-        to_addr = '0x' + db.ico.find_one({'ico':ico})['address']['address']
-        signature = '0x' + db.user.find_one({'id':_id})['deposit_addr']['private']
-        from_addr = '0x' + db.user.find_one({'id':_id})['deposit_addr']['address']
+        to_addr = db.ico.find_one({'ico':ico})['address']['address']
+        signature = db.user.find_one({'id':_id})['deposit_addr']['private']
+        from_addr = db.user.find_one({'id':_id})['deposit_addr']['address']
         tx_hash = tx(from_addr, to_addr, signature, eth_value)
         if tx_hash != False:
             log = db.user.find_one({'id':_id})['operations']
@@ -122,7 +130,7 @@ def contribute(_id, ico, eth_value):
 
 #Get deposit address for user's internal wallet
 def get_deposit_addr(_id):
-    return '0x' + db.user.find_one({'id':_id})['deposit_addr']['address']
+    return db.user.find_one({'id':_id})['deposit_addr']['address']
 
 
 #Initial add adress for expert chat income
@@ -138,8 +146,8 @@ def update_expert(addr):
 
 #Purchase expert chat access
 def get_expert(_id, length):
-    signature = '0x' + db.user.find_one({'id':_id})['deposit_addr']['private']
-    from_addr = '0x' + db.user.find_one({'id':_id})['deposit_addr']['address']
+    signature = db.user.find_one({'id':_id})['deposit_addr']['private']
+    from_addr = db.user.find_one({'id':_id})['deposit_addr']['address']
     
     to_addr = db.expert.find_one({'name':'expert_wallet'})['addr']
     
@@ -171,13 +179,13 @@ def get_expert(_id, length):
 
 #Get information on total funds raised by ICO in bot
 def get_ico_money(ico):
-    return w3.eth.getBalance('0x' + db.ico.find_one({'ico':ico})['address']['address'])/1000000000000000000
+    return w3.eth.getBalance(db.ico.find_one({'ico':ico})['address']['address'])/1000000000000000000
 
 
 #Transfer funds raised from bot wallet to external one
 def transfer_from_ico(ico, to_addr, eth_value):
-    signature = '0x' + db.ico.find_one({'ico':ico})['address']['private']
-    from_addr = '0x' + db.ico.find_one({'ico':ico})['address']['address']
+    signature = db.ico.find_one({'ico':ico})['address']['private']
+    from_addr = db.ico.find_one({'ico':ico})['address']['address']
     return tx(from_addr, to_addr, signature, eth_value)
 
 
