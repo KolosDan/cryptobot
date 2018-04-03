@@ -18,25 +18,27 @@ w3 = Web3(HTTPProvider('https://ropsten.infura.io/xSb0KCuTom59NVjS446D'))
 
 #Initial add user to db
 def create_user(_id, username):
-    if db.user.find_one({"username":username}) == None:
-        user = {}
-        user['id'] = _id
-        user['username'] = username
-        user['eth_addr'] = None
-        user['email'] = None
-        user['phone'] = None
-        user['is_expert'] = False
-        user['is_admin'] = False
-        user['balance'] = 0.0
-        user['operations'] = [{'timestamp' : str(datetime.datetime.now()),
-                              'op':'create_user'}]
-        addr_book = requests.post('https://api.blockcypher.com/v1/eth/main/addrs').json()
-        addr_book['address'] = '0x' + addr_book['address']
-        addr_book['private'] = '0x' + addr_book['private']
-        addr_book['public'] = '0x' + addr_book['public']
-        user['deposit_addr'] = addr_book
-        
-        return db.user.insert_one(user)
+    try:
+        if db.user.find_one({"username":username}) == None:
+            user = {}
+            user['id'] = _id
+            user['username'] = username
+            user['eth_addr'] = None
+            user['email'] = None
+            user['phone'] = None
+            user['is_expert'] = False
+            user['is_admin'] = False
+            user['balance'] = 0.0
+            user['operations'] = [{'timestamp' : str(datetime.datetime.now()),
+                                  'op':'create_user'}]
+            addr_book = requests.post('https://api.blockcypher.com/v1/eth/main/addrs').json()
+            addr_book['address'] = '0x' + addr_book['address']
+            addr_book['private'] = '0x' + addr_book['private']
+            addr_book['public'] = '0x' + addr_book['public']
+            user['deposit_addr'] = addr_book
+            return db.user.insert_one(user)
+    except:
+        return False
 
 #Update user info
 def _update(_id,field, upd):

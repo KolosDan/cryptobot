@@ -32,7 +32,8 @@ tr_dict = {}
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    create_user(message.from_user.id,message.from_user.username)
+    if create_user(message.from_user.id,message.from_user.username) == False:
+        bot.send_message(message.chat.id, "Ой-ой, не удалось записать вас в базу.\nПопробуйте удалить диалог и зайти снова\nПростите за неудобства:(")
     keyboard = types.ReplyKeyboardMarkup()
     btn= types.InlineKeyboardButton(text="👨🏻‍💻Личный кабинет")
     btn1 = types.InlineKeyboardButton(text="💼ICO клуб")
@@ -238,7 +239,7 @@ def startmenu(message):
     
 @bot.message_handler(func=lambda message: message.text=="🔌Майнинг, оборудование")
 def mining(message):
-    bot.send_message(message.chat.id, "🔌Майнинг, оборудование")
+    bot.send_message(message.chat.id, "Актуальную информацию можете найти тут: https://t.me/MiningMcAfee")
 
 @bot.message_handler(func=lambda message: message.text=="🎁Розыгрыш BTC")
 def btc(message):
@@ -295,7 +296,9 @@ def DB(message):
     
 @bot.message_handler(func=lambda message: message.text=="💵Покупка BTC")
 def trade_btc(message):
-    bot.send_message(message.chat.id, "Описание: объемы от 1 BTC до 1000 BTC при личной встрече за наличный расчет\nДо 1 BTC можете купить в боте: ссылка с рефкой")
+    bot.send_message(message.chat.id, """💵👉🏼🌕USD/BTC | RUB/BTC\n🌕👉🏼💵BTC/USD | BTC/RUB""")
+    bot.send_message(message.chat.id, """💹 Bitstamp/Bitfinex\n🏦 Сделки в офисе/банке\n🔥Работаем с безналом""")
+    bot.send_message(message.chat.id, """💰Писать в лс @VivereEstVincere @razdva34""")
     
 @bot.message_handler(commands=['change'])
 def change(message):
@@ -409,22 +412,25 @@ def callbacks(call):
         keyboard.row(btn2,btn3)
         bot.send_message(s[0], '''Выберите свой тарифный план''',reply_markup=keyboard)
     elif s[1] == "icoinvest":
-        if s[2] == "modelB":
-            if contribute(int(user_dict[str(call.from_user.id)]._id),"modelB",user_dict[str(call.from_user.id)].value) != False:
-                bot.send_message(s[0], "Транзакция успешно отправлена")
-                if data['is_expert'] == False:
-                    time = str(datetime.date.today() + datetime.timedelta(days=31))
-                    db.user.update_one({'id':call.from_user.id}, {'$set':{'is_expert': time}})
-                    btn = types.InlineKeyboardButton(text="Чат",url='https://habrahabr.ru')
-                    keyboard.row(btn)
-                    bot.send_message(s[0], "🎁 В подарок вам дается доступ на 1 месяц к Приватному чату экспертов Private Crypto.",reply_markup=keyboard)
+        try:
+            if s[2] == "modelB":
+                if contribute(int(user_dict[str(call.from_user.id)]._id),"modelB",user_dict[str(call.from_user.id)].value) != False:
+                    bot.send_message(s[0], "Транзакция успешно отправлена")
+                    if data['is_expert'] == False:
+                        time = str(datetime.date.today() + datetime.timedelta(days=31))
+                        db.user.update_one({'id':call.from_user.id}, {'$set':{'is_expert': time}})
+                        btn = types.InlineKeyboardButton(text="Чат",url='https://habrahabr.ru')
+                        keyboard.row(btn)
+                        bot.send_message(s[0], "🎁 В подарок вам дается доступ на 1 месяц к Приватному чату экспертов Private Crypto.",reply_markup=keyboard)
+                else:
+                    bot.send_message(s[0], "У вас недостаточно средств для данной операции или сумма транзакции слишком мала:(")
             else:
-                bot.send_message(s[0], "У вас недостаточно средств для данной операции или сумма транзакции слишком мала:(")
-        else:
-            if contribute(int(user_dict[str(call.from_user.id)]._id),user_dict[str(call.from_user.id)].name,user_dict[str(call.from_user.id)].value) != False:
-                bot.send_message(s[0], "Транзакция успешно отправлена")
-            else:
-                bot.send_message(s[0], "У вас недостаточно средств для данной операции или сумма транзакции слишком мала:(")
+                if contribute(int(user_dict[str(call.from_user.id)]._id),user_dict[str(call.from_user.id)].name,user_dict[str(call.from_user.id)].value) != False:
+                    bot.send_message(s[0], "Транзакция успешно отправлена")
+                else:
+                    bot.send_message(s[0], "У вас недостаточно средств для данной операции или сумма транзакции слишком мала:(")
+        except:
+            bot.send_message(s[0], "Упс... ошибка на сервере. Попробуйте провести операцию заново с самого начала\nПростите за неудобство :(")
     elif s[1] == "getcontr":
         if get_contributors(s[2]) ==[]:
             bot.send_message(s[0], 'Еще нет вложений')
@@ -475,7 +481,7 @@ def main():
         try:
             bot.polling(none_stop=True)
         except Exception as err:
-            time.sleep(30)
+            time.sleep(15)
 
 def signal_handler(signal_number, frame):
     print('Received signal ' + str(signal_number)
