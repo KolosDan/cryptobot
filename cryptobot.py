@@ -19,9 +19,9 @@ from telebot import types
 # In[2]:
 
 
-token = "564747088:AAEAP-YnUgtqDfo--lGZNi89VOGR_cWfyYE"
+token = ""
 bot = telebot.TeleBot(token)
-db = MongoClient('213.183.48.143').cryptobot
+db = MongoClient('').cryptobot
 ico = ICO()
 user_dict = {}
 tr_dict = {}
