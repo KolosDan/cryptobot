@@ -12,14 +12,14 @@ import time
 from telebot import types
 import cherrypy
 
-token = ""
+token = "593236471:AAHKA4Mca_Sf5owbHp482ZX2PwRClPXr-7c"
 bot = telebot.TeleBot(token)
-db = MongoClient().cryptobot
+db = MongoClient('213.183.48.143', username = 'admin', password='kolospidor',authSource='cryptobot').cryptobot
 ico = ICO()
 user_dict = {}
 tr_dict = {}
 
-WEBHOOK_HOST = ''
+WEBHOOK_HOST = '213.183.48.143'
 WEBHOOK_PORT = 443  
 WEBHOOK_LISTEN = '0.0.0.0'
 
