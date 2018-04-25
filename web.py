@@ -138,41 +138,21 @@ def transferFromIco(message):
         for i in icos:
             keyboard.add(types.InlineKeyboardButton(text=i['ico'],callback_data=str(message.chat.id)+'_transferfrom_'+i['ico']))
         bot.send_message(message.chat.id, "Выберите ICO:",reply_markup=keyboard)
-    
-@bot.message_handler(func=lambda message: message.text=="Изменить эксперт-кошелек")
-def updatexpert(message):
-    data = db.user.find_one({"id":int(message.from_user.id)})
-    if data['is_admin'] == True:
-        bot.send_message(message.chat.id, "Впишите новый адрес")
-        bot.register_next_step_handler(message,updatexpert_2)
-    
-def updatexpert_2(message):
-    if update_expert(message.text) != False:
-        bot.send_message(message.chat.id, "Обновлено успешно")
-    else:
-        bot.send_message(message.chat.id, "Ошибка, проверьте правильность введенных данных")
-    
-@bot.message_handler(func=lambda message: message.text=="Задать эксперт-кошелек")
-def addexpert(message):
-    bot.send_message(message.chat.id, "Впишите адрес")
-    bot.register_next_step_handler(message,addexpert_2)
-    
-def addexpert_2(message):
-    if add_expert(message.text) != False:
-        bot.send_message(message.chat.id, "Адрес изменен")
-    else:
-        bot.send_message(message.chat.id, "Кошелек уже создан")
 
-@bot.message_handler(func=lambda message: message.text=="Изменить кошелек модели B")
-def changeModelB(message):
-    data = db.user.find_one({"id":int(message.from_user.id)})
-    if data['is_admin'] == True:
-        bot.send_message(message.chat.id, "Введите новый кошелек")
-        bot.register_next_step_handler(message,changeModelB_step2)
-def changeModelB_step2(message):
-    update_modelb(message.text)
-    bot.send_message(message.chat.id, "Кошелек изменен")
-    bot.send_message(message.chat.id, "Теперь вы НЕ сможете вывести деньги через админ-панель с этого кошелька")
+#@bot.message_handler(func=lambda message: message.text=="🏆 Результаты сигналов")
+#def btc(message):
+#    bot.send_message(message.chat.id, "VRC/BTC profit 10.9% за 30 минут")
+#    bot.send_photo(message.chat.id,open('media/1.png', 'rb'))
+#    bot.send_message(message.chat.id, "STR/BTC profit 9% за 3 дня")
+#    bot.send_photo(message.chat.id,open('media/2.png', 'rb'))
+#    bot.send_message(message.chat.id, "NANO/BTC profit 12% за 1 день")
+#    bot.send_photo(message.chat.id,open('media/3.png', 'rb'))
+#    bot.send_message(message.chat.id, "KMD/BTC profit 11.8% за 13 дней")
+#    bot.send_photo(message.chat.id,open('media/4.png', 'rb'))
+#    bot.send_message(message.chat.id, "NEBL/BTC profit 18.8% за 13 дней")
+#    bot.send_photo(message.chat.id,open('media/5.png', 'rb'))
+#    bot.send_message(message.chat.id, "GTO/BTC profit 14.7% за 12 дней")
+#    bot.send_photo(message.chat.id,open('media/6.png', 'rb'))
 
 
 @bot.message_handler(func=lambda message: message.text=="⁉️ Вопросы и ответы")
@@ -255,6 +235,7 @@ def cabinet(message):
                                             🔑 Вы являетесь членом нашего закрытого сообщества Private Crypto.\n✅Для вас действует особая комиссия на ICO клуб.\n✅Для вас действует скидка на оборудование для майнинга.\n✅Для вас действует скидка на Приватный канал с торговыми рекомендациями.
                                             \n🆔 Ваш id клиента: %s
                                             \n💵 Баланс кошелька, привязанного в кабинете: %s Eth""" % (data["id"],get_balance(message.from_user.id)),reply_markup=keybd)
+
 
 @bot.message_handler(func=lambda message: message.text=="🗣Приватный чат экспертов")
 def private(message):
@@ -487,8 +468,7 @@ def transferFrom_step5(message):
             bot.send_message(message.chat.id, "️Транзакция успешно отправлена")
         else:
             bot.send_message(message.chat.id, "️Произошла ошибка")
-    except Exception as e:
-        print(e)
+    except:
         bot.send_message(message.chat.id, "️Ошибка, проверьте правильность данных")
     
 @bot.callback_query_handler(func=lambda call: True)
@@ -558,8 +538,8 @@ def callbacks(call):
 
 🙏 Спасибо что выбрали нас.""")
     elif s[1] == "modelB":
-        bot.send_message(s[0], '💳 Введите количество ETH, которое хотите потратить.\nНаша команда сделает самые выгодные вложения!')
-        bot.register_next_step_callback(call,modelB)
+        bot.send_message(s[0],"""Сборы будут проходить в этом месяце, даты будут определены позже.
+Следите за анонсами на канале и информацией в боте.""")
     elif s[1] == "deposit":
         bot.send_message(s[0], "Здесь Вы можете пополнить баланс Вашего кошелька")
         bot.send_message(s[0], "Для этого перешлите ETH на Ваш личный кошелек:")
