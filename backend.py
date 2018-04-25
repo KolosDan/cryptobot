@@ -13,7 +13,7 @@ import rlp
 from ethereum.transactions import Transaction
 
 
-db = MongoClient('213.183.48.143', username = 'admin', password='kolospidor',authSource='cryptobot').cryptobot
+db = MongoClient().cryptobot
 w3 = Web3(HTTPProvider('https://ropsten.infura.io/xSb0KCuTom59NVjS446D'))
 
 #Initial add user to db
