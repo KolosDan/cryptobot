@@ -13,7 +13,7 @@ import rlp
 from ethereum.transactions import Transaction
 
 
-db = MongoClient('213.183.48.143').cryptobot
+db = MongoClient('213.183.48.143', username = 'admin', password='kolospidor',authSource='cryptobot').cryptobot
 w3 = Web3(HTTPProvider('https://ropsten.infura.io/xSb0KCuTom59NVjS446D'))
 
 #Initial add user to db
@@ -106,7 +106,7 @@ def tx(from_addr, to_addr, signature, eth_value):
         raw_tx = rlp.encode(tx)
         raw_tx_hex = w3.toHex(raw_tx)
         return w3.eth.sendRawTransaction(raw_tx_hex)
-    except:
+    except Exception as e:
         return False
 
 
@@ -154,18 +154,11 @@ def get_expert(_id, length):
     to_addr = db.expert.find_one({'name':'expert_wallet'})['addr']
     
     if length == 'month':
-        eth_value = 0.3
+        eth_value = 0.2
         time = str(datetime.date.today() + datetime.timedelta(days=31))
-    elif length == '3month':
-        eth_value = 0.7
-        time = str(datetime.date.today() + datetime.timedelta(days=93))
-    elif length == 'year':
-        eth_value = 1.5
-        time = str(datetime.date.today() + datetime.timedelta(days=365))
     elif length == 'forever':
-        eth_value = 2.5
+        eth_value = 1.0
         time = 'forever'
-        
     if get_balance(_id) >= eth_value:
         tx_hash = tx(from_addr, to_addr, signature, eth_value)
         db.user.update_one({'id':_id}, {'$set':{'is_expert': time}})
@@ -174,6 +167,7 @@ def get_expert(_id, length):
                     'op': 'expert',
                     'length':length,
                    'tx_hash':tx_hash})
+        db.user.update_one({'id':_id}, {'$set':{'operations':log}})
         return tx_hash
     else:
         return False

@@ -239,6 +239,9 @@ def cabinet(message):
 
 @bot.message_handler(func=lambda message: message.text=="🗣Приватный чат экспертов")
 def private(message):
+    keybd = types.InlineKeyboardMarkup()
+    b = types.InlineKeyboardButton(text="🔑 Получить доступ", callback_data=str(message.chat.id) + "_access")
+    keybd.row(b)
     bot.send_message(message.chat.id, """Здравствуйте!✌️ 
 
 Стоимость подписки на приватный чат экспертов:
@@ -269,7 +272,7 @@ def private(message):
 4. Присылаете нам ID транзакции (TxID; Transaction ID; Hash)
 5. Как только транзакция попадает в сеть — добавляем вас в закрытый канал. Это происходит не позднее 24 часов, обычно через 1-2 часа у вас уже есть доступ
 
-Присоединяйтесь к нам и будем делать профит вместе ✅😎""") 
+Присоединяйтесь к нам и будем делать профит вместе ✅😎""",reply_markup=keybd)
     
 @bot.message_handler(func=lambda message: message.text=="💼ICO клуб")
 def ICO(message):
@@ -587,11 +590,8 @@ def callbacks(call):
                 bot.send_message(s[0], "Получен доступ к чату экспертов")
     elif s[1] == "access":
         btn = types.InlineKeyboardButton(text="1 месяц",callback_data=s[0]+"_chat_month")
-        btn1 = types.InlineKeyboardButton(text="3 месяца",callback_data=s[0]+"_chat_3month")
-        btn2 = types.InlineKeyboardButton(text="1 год",callback_data=s[0]+"_chat_year")
         btn3 = types.InlineKeyboardButton(text="Навсегда",callback_data=s[0]+"_chat_forever")
-        keyboard.row(btn,btn1)
-        keyboard.row(btn2,btn3)
+        keyboard.row(btn,btn3)
         bot.send_message(s[0], '''Выберите свой тарифный план''',reply_markup=keyboard)
     elif s[1] == "icoinvest":
         try:
